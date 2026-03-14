@@ -43,8 +43,19 @@ class OfficeScene {
     this.mouseX = -1;
     this.mouseY = -1;
     this.hoveredAgent = null;
+    this.selectedAgent = null;
+    this.onAgentClick = null; // callback(agent)
+
     this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
     this.canvas.addEventListener('mouseleave', () => { this.hoveredAgent = null; });
+
+    // Click + touch support (hitPad=8 for fat fingers)
+    this.canvas.addEventListener('click', (e) => this.onTap(e.clientX, e.clientY));
+    this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      this.onTap(t.clientX, t.clientY);
+    }, { passive: false });
   }
 
   // Office layout: 0=floor, 1=wall, 2=kitchen, 3=carpet (meeting room)
@@ -425,14 +436,18 @@ class OfficeScene {
     this.canvas.style.width = W + 'px';
     this.canvas.style.height = H + 'px';
 
-    // Calculate scale to fit office in viewport (leave room for status bar)
+    // Dynamic status bar height instead of hardcoded 40px
+    const statusBar = document.querySelector('.status-bar');
+    const barH = statusBar ? statusBar.offsetHeight : 40;
+
+    // Calculate scale to fit office in viewport
     const officeW = this.cols * this.T;
     const officeH = this.rows * this.T;
-    const viewH = H - 40; // minus status bar
+    const viewH = H - barH;
 
     this.scale = Math.min(W / officeW, viewH / officeH) * dpr;
     this.offsetX = (W * dpr - officeW * this.scale) / 2;
-    this.offsetY = 40 * dpr + (viewH * dpr - officeH * this.scale) / 2;
+    this.offsetY = barH * dpr + (viewH * dpr - officeH * this.scale) / 2;
   }
 
   // Mouse move for hover detection
@@ -468,6 +483,43 @@ class OfficeScene {
       document.getElementById('panel-status').textContent = stateNames[a.state] || a.state;
     } else {
       panel.style.display = 'none';
+    }
+  }
+
+  // Tap handler (click + touch)
+  onTap(clientX, clientY) {
+    const dpr = window.devicePixelRatio || 1;
+    const canvasX = (clientX * dpr - this.offsetX) / this.scale;
+    const canvasY = (clientY * dpr - this.offsetY) / this.scale;
+    const hitPad = 8; // extra pixels for touch targets
+
+    let tapped = null;
+    for (const agent of this.agents) {
+      const ax = agent.x - CHAR_W / 2 - hitPad;
+      const ay = agent.y - CHAR_H - hitPad;
+      const aw = CHAR_W + hitPad * 2;
+      const ah = CHAR_H + hitPad * 2;
+      if (canvasX >= ax && canvasX <= ax + aw &&
+          canvasY >= ay && canvasY <= ay + ah) {
+        tapped = agent;
+        break;
+      }
+    }
+
+    if (tapped) {
+      this.selectedAgent = tapped;
+      if (this.onAgentClick) this.onAgentClick(tapped);
+    } else {
+      this.selectedAgent = null;
+    }
+  }
+
+  // Show speech bubble on agent (called from chat)
+  showAgentSpeech(agentId, text) {
+    const agent = this.agents.find(a => a.id === agentId);
+    if (agent) {
+      agent.speech = text.length > 20 ? text.slice(0, 20) + '…' : text;
+      agent.speechTimer = 4;
     }
   }
 
@@ -545,8 +597,17 @@ class OfficeScene {
       }
     }
 
-    // 5. Render agent highlight
-    if (this.hoveredAgent) {
+    // 5. Render selected agent breathing glow
+    if (this.selectedAgent) {
+      const a = this.selectedAgent;
+      const glow = 0.3 + 0.3 * Math.sin(Date.now() / 400);
+      ctx.strokeStyle = `rgba(88, 166, 255, ${glow})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(a.x - CHAR_W / 2 - 3, a.y - CHAR_H - 3, CHAR_W + 6, CHAR_H + 8);
+    }
+
+    // 6. Render hovered agent highlight
+    if (this.hoveredAgent && this.hoveredAgent !== this.selectedAgent) {
       const a = this.hoveredAgent;
       ctx.strokeStyle = 'rgba(88, 166, 255, 0.6)';
       ctx.lineWidth = 1;

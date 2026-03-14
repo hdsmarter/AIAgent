@@ -3,6 +3,20 @@
  * All sprites drawn as small pixel arrays then scaled up on canvas
  */
 
+// roundRect polyfill (Chrome<99, Safari<15.4, Firefox<112)
+if (typeof CanvasRenderingContext2D !== 'undefined' &&
+    !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+    const r = typeof radii === 'number' ? radii : (Array.isArray(radii) ? radii[0] : 0);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
+
 const TILE = 32;   // Base tile size in pixels
 const CHAR_W = 16; // Character width
 const CHAR_H = 24; // Character height
@@ -413,38 +427,42 @@ const PixelSprites = {
 
   // Speech bubble drawing
   drawBubble(ctx, x, y, text) {
-    ctx.font = '11px "Microsoft JhengHei", "PingFang TC", sans-serif';
-    const metrics = ctx.measureText(text);
-    const tw = metrics.width;
-    const bw = tw + 16;
-    const bh = 22;
-    const bx = x - bw / 2;
-    const by = y - bh - 8;
+    try {
+      ctx.font = '11px "Microsoft JhengHei", "PingFang TC", sans-serif';
+      const metrics = ctx.measureText(text);
+      const tw = metrics.width;
+      const bw = tw + 16;
+      const bh = 22;
+      const bx = x - bw / 2;
+      const by = y - bh - 8;
 
-    // Bubble background
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, 6);
-    ctx.fill();
+      // Bubble background
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, 6);
+      ctx.fill();
 
-    // Border
-    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+      // Border
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-    // Triangle pointer
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.beginPath();
-    ctx.moveTo(x - 4, by + bh);
-    ctx.lineTo(x, by + bh + 6);
-    ctx.lineTo(x + 4, by + bh);
-    ctx.fill();
+      // Triangle pointer
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.beginPath();
+      ctx.moveTo(x - 4, by + bh);
+      ctx.lineTo(x, by + bh + 6);
+      ctx.lineTo(x + 4, by + bh);
+      ctx.fill();
 
-    // Text
-    ctx.fillStyle = '#2c3e50';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, by + bh / 2);
-    ctx.textAlign = 'left';
+      // Text
+      ctx.fillStyle = '#2c3e50';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, by + bh / 2);
+      ctx.textAlign = 'left';
+    } catch (e) {
+      // Safety net: skip bubble if roundRect still fails
+    }
   }
 };
