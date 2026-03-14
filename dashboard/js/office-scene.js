@@ -114,6 +114,14 @@ class OfficeScene {
     f('desk', 8, 3); f('computer', 8, 2);
     f('desk', 10, 3); f('computer', 10, 2);
 
+    // Middle row of desks (row 6) with computers
+    f('desk', 1, 6); f('computer', 1, 5);
+    f('desk', 3, 6); f('computer', 3, 5);
+    f('desk', 5, 6); f('computer', 5, 5);
+    f('desk', 7, 6); f('computer', 7, 5);
+    f('desk', 9, 6); f('computer', 9, 5);
+    f('desk', 11, 6); f('computer', 11, 5);
+
     // Bottom row of desks (row 9-10) with computers
     f('desk', 2, 9); f('computer', 2, 8);
     f('desk', 4, 9); f('computer', 4, 8);
@@ -128,6 +136,14 @@ class OfficeScene {
     f('chair', 8, 5, { zOff: T + 8 });
     f('chair', 10, 5, { zOff: T + 8 });
 
+    // Chairs for middle desks (below desks, row 8)
+    f('chair', 1, 8, { zOff: T + 8 });
+    f('chair', 3, 8, { zOff: T + 8 });
+    f('chair', 5, 8, { zOff: T + 8 });
+    f('chair', 7, 8, { zOff: T + 8 });
+    f('chair', 9, 8, { zOff: T + 8 });
+    f('chair', 11, 8, { zOff: T + 8 });
+
     // Chairs for bottom desks (below desks, row 11)
     f('chair', 2, 11, { zOff: T + 8 });
     f('chair', 4, 11, { zOff: T + 8 });
@@ -141,9 +157,9 @@ class OfficeScene {
     f('bookshelf', 5, 1, { zOff: 4 });
     f('bookshelf', 7, 1, { zOff: 4 });
 
-    // Plants
-    f('plant', 1, 6);
-    f('plant', 11, 6);
+    // Plants (moved to avoid middle-row desks)
+    f('plant', 1, 2);
+    f('plant', 11, 2);
     f('plant', 1, 12);
     f('plant', 11, 12);
 
@@ -166,16 +182,27 @@ class OfficeScene {
     // Water cooler
     f('waterCooler', 18, 9);
 
-    // Desk seats (where agents sit)
+    // Desk seats — 3 rows × 16 agents
     this.seats = [
+      // Top row (5 seats, row 4)
       { col: 2, row: 4, dir: 'down' },
       { col: 4, row: 4, dir: 'down' },
       { col: 6, row: 4, dir: 'down' },
       { col: 8, row: 4, dir: 'down' },
       { col: 10, row: 4, dir: 'down' },
+      // Middle row (6 seats, row 7)
+      { col: 1, row: 7, dir: 'down' },
+      { col: 3, row: 7, dir: 'down' },
+      { col: 5, row: 7, dir: 'down' },
+      { col: 7, row: 7, dir: 'down' },
+      { col: 9, row: 7, dir: 'down' },
+      { col: 11, row: 7, dir: 'down' },
+      // Bottom row (5 seats, row 10)
       { col: 2, row: 10, dir: 'down' },
       { col: 4, row: 10, dir: 'down' },
       { col: 6, row: 10, dir: 'down' },
+      { col: 8, row: 10, dir: 'down' },
+      { col: 10, row: 10, dir: 'down' },
     ];
   }
 
@@ -199,28 +226,32 @@ class OfficeScene {
 
   spawnAgents() {
     const palettes = PixelSprites.agentPalettes;
-    for (let i = 0; i < 8; i++) {
+    const count = Math.min(palettes.length, this.seats.length); // 16
+    for (let i = 0; i < count; i++) {
       const seat = this.seats[i];
       const agent = {
         id: i,
         palette: palettes[i],
-        name: palettes[i].name,
+        name: I18n.agentName(i),
         // Position (pixel coords)
         x: seat.col * this.T + this.T / 2,
         y: seat.row * this.T + this.T / 2,
         // Grid position
         col: seat.col,
         row: seat.row,
-        // FSM state
+        // FSM state (animation)
         state: 'type', // idle, walk, type
         dir: 'down',
         frame: Math.floor(Math.random() * 4),
         frameTimer: 0,
+        // Real AI status (separate from animation FSM)
+        realStatus: 'idle', // active | idle | offline
+        currentTask: null,
         // Path
         path: [],
         pathIdx: 0,
         // Timers
-        stateTimer: Math.random() * 8 + 4, // seconds until next action
+        stateTimer: Math.random() * 8 + 4,
         // Seat assignment
         seatIdx: i,
         // Speech
@@ -230,6 +261,20 @@ class OfficeScene {
         active: true,
       };
       this.agents.push(agent);
+    }
+
+    // Re-sync agent names on language change
+    I18n.onChange(() => {
+      for (const a of this.agents) a.name = I18n.agentName(a.id);
+    });
+  }
+
+  /** Update real agent status (called from app.js) */
+  updateAgentStatus(agentId, status, task) {
+    const agent = this.agents.find(a => a.id === agentId);
+    if (agent) {
+      agent.realStatus = status || 'idle';
+      agent.currentTask = task || null;
     }
   }
 
@@ -477,10 +522,11 @@ class OfficeScene {
       panel.style.display = 'block';
       panel.style.left = (e.clientX + 16) + 'px';
       panel.style.top = (e.clientY - 10) + 'px';
-      document.getElementById('panel-name').textContent = '⚡ ' + a.name;
-      document.getElementById('panel-role').textContent = a.palette.name;
-      const stateNames = { type: '工作中', walk: '走動中', idle: '休息中' };
-      document.getElementById('panel-status').textContent = stateNames[a.state] || a.state;
+      document.getElementById('panel-name').textContent = '\u26A1 ' + a.name;
+      document.getElementById('panel-role').textContent = I18n.agentRole(a.id);
+      const statusText = I18n.t('status.' + a.realStatus);
+      const taskSuffix = a.currentTask ? ' — ' + a.currentTask : '';
+      document.getElementById('panel-status').textContent = statusText + taskSuffix;
     } else {
       panel.style.display = 'none';
     }
@@ -662,11 +708,11 @@ class OfficeScene {
     const dy = agent.y - CHAR_H;
     this.ctx.drawImage(spriteCanvas, dx, dy, CHAR_W, CHAR_H);
 
-    // Name label below agent
+    // Name label below agent (from i18n)
     this.ctx.font = '5px sans-serif';
     this.ctx.fillStyle = 'rgba(255,255,255,0.6)';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(agent.name, agent.x, agent.y + 6);
+    this.ctx.fillText(I18n.agentName(agent.id), agent.x, agent.y + 6);
     this.ctx.textAlign = 'left';
   }
 

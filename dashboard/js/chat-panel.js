@@ -1,24 +1,31 @@
 /**
- * chat-panel.js — 對話面板 UI（SRP）
- * 桌面：右側 360px 滑入 / 手機：底部 70vh sheet
- * DOM 全部程式化建立，全繁體中文
+ * chat-panel.js — Chat panel UI (SRP)
+ * Desktop: right-side 360px slide-in / Mobile: bottom 70vh sheet
+ * All strings via I18n.t()
  */
 class ChatPanel {
-  static UI_TEXT = {
-    title: '對話',
-    placeholder: '輸入訊息...',
-    send: '發送',
-    offline: '離線模式 — 閘道器未連線',
-    typing: '思考中...',
-    close: '關閉',
-    noAgent: '請點擊 Agent 開始對話',
-  };
+  /** Dynamic UI text via i18n */
+  static get UI_TEXT() {
+    return {
+      title:        I18n.t('chat.title'),
+      placeholder:  I18n.t('chat.placeholder'),
+      send:         I18n.t('chat.send'),
+      offline:      I18n.t('chat.offline'),
+      typing:       I18n.t('chat.typing'),
+      close:        I18n.t('chat.close'),
+      noAgent:      I18n.t('chat.noAgent'),
+      openTelegram: I18n.t('chat.openTelegram'),
+    };
+  }
 
   constructor() {
     this.isOpen = false;
     this.agent = null;
     this.onSend = null; // callback(agentId, text)
     this._build();
+
+    // Re-render text on language change
+    I18n.onChange(() => this._updateTexts());
   }
 
   _build() {
@@ -48,14 +55,14 @@ class ChatPanel {
     this.titleEl.className = 'chat-title';
     this.titleEl.textContent = T.title;
 
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'chat-close-btn';
-    closeBtn.textContent = '\u2715';
-    closeBtn.title = T.close;
-    closeBtn.addEventListener('click', () => this.close());
+    this.closeBtn = document.createElement('button');
+    this.closeBtn.className = 'chat-close-btn';
+    this.closeBtn.textContent = '\u2715';
+    this.closeBtn.title = T.close;
+    this.closeBtn.addEventListener('click', () => this.close());
 
     this.header.appendChild(this.titleEl);
-    this.header.appendChild(closeBtn);
+    this.header.appendChild(this.closeBtn);
     this.el.appendChild(this.header);
 
     // Offline banner
@@ -63,6 +70,16 @@ class ChatPanel {
     this.offlineBanner.className = 'chat-offline';
     this.offlineBanner.textContent = T.offline;
     this.el.appendChild(this.offlineBanner);
+
+    // Telegram fallback link
+    this.tgLink = document.createElement('a');
+    this.tgLink.className = 'chat-tg-link';
+    this.tgLink.href = ChatClient.DEFAULTS.tgBotLink;
+    this.tgLink.target = '_blank';
+    this.tgLink.rel = 'noopener';
+    this.tgLink.textContent = T.openTelegram;
+    this.tgLink.style.display = 'none';
+    this.el.appendChild(this.tgLink);
 
     // Messages list
     this.messageList = document.createElement('div');
@@ -104,13 +121,34 @@ class ChatPanel {
     document.body.appendChild(this.el);
   }
 
+  /** Re-render all text labels when language changes */
+  _updateTexts() {
+    const T = ChatPanel.UI_TEXT;
+    this.closeBtn.title = T.close;
+    this.offlineBanner.textContent = T.offline;
+    this.tgLink.textContent = T.openTelegram;
+    this.typingEl.textContent = T.typing;
+    this.input.placeholder = T.placeholder;
+    this.sendBtn.textContent = T.send;
+
+    // Re-render title if panel is open
+    if (this.isOpen && this.agent) {
+      this.titleEl.textContent = '\u26A1 ' + I18n.agentName(this.agent.id) + ' \u2014 ' + T.title;
+    } else if (this.isOpen) {
+      this.titleEl.textContent = T.noAgent;
+    } else {
+      this.titleEl.textContent = T.title;
+    }
+  }
+
   open(agent) {
     this.agent = agent;
     this.isOpen = true;
     this.messageList.textContent = ''; // clear
+    const T = ChatPanel.UI_TEXT;
     this.titleEl.textContent = agent
-      ? '\u26A1 ' + agent.name + ' \u2014 ' + ChatPanel.UI_TEXT.title
-      : ChatPanel.UI_TEXT.noAgent;
+      ? '\u26A1 ' + I18n.agentName(agent.id) + ' \u2014 ' + T.title
+      : T.noAgent;
     this.el.classList.add('open');
     this.overlay.classList.add('open');
     this.input.focus();
@@ -129,6 +167,11 @@ class ChatPanel {
     this.sendBtn.disabled = offline;
   }
 
+  /** Show Telegram fallback link when all transports fail */
+  showTelegramFallback(show) {
+    this.tgLink.style.display = show ? 'block' : 'none';
+  }
+
   setTyping(show) {
     this.typingEl.style.display = show ? 'block' : 'none';
     if (show) this._scrollToBottom();
@@ -136,7 +179,7 @@ class ChatPanel {
 
   addMessage(role, text) {
     const msg = document.createElement('div');
-    msg.className = 'chat-msg chat-msg-' + role; // user | agent | system
+    msg.className = 'chat-msg chat-msg-' + role;
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
     bubble.textContent = text;

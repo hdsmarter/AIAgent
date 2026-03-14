@@ -22,41 +22,32 @@ const CHAR_W = 16; // Character width
 const CHAR_H = 24; // Character height
 
 const PixelSprites = {
-  // Color palettes for AI agents
+  // Color palettes for 16 AI agents (names via I18n.agentName(i))
   agentPalettes: [
-    { hair: '#2d1b69', skin: '#f4c89e', shirt: '#4a90d9', pants: '#2c3e50', name: '數據分析師' },
-    { hair: '#1a1a2e', skin: '#e8b88a', shirt: '#e74c3c', pants: '#34495e', name: '行銷策略師' },
-    { hair: '#5d4e37', skin: '#f5d5b8', shirt: '#27ae60', pants: '#2c3e50', name: '財務顧問' },
-    { hair: '#8b4513', skin: '#deb887', shirt: '#9b59b6', pants: '#34495e', name: '人資管理師' },
-    { hair: '#333333', skin: '#f4c89e', shirt: '#f39c12', pants: '#2c3e50', name: '供應鏈專家' },
-    { hair: '#c0392b', skin: '#fddcb5', shirt: '#1abc9c', pants: '#34495e', name: 'IT 架構師' },
-    { hair: '#2c3e50', skin: '#e8b88a', shirt: '#3498db', pants: '#2c3e50', name: '專案經理' },
-    { hair: '#6b3fa0', skin: '#f5d5b8', shirt: '#e67e22', pants: '#34495e', name: '客服主管' },
+    { hair: '#2d1b69', skin: '#f4c89e', shirt: '#4a90d9', pants: '#2c3e50' }, // 0 data-analyst
+    { hair: '#1a1a2e', skin: '#e8b88a', shirt: '#e74c3c', pants: '#34495e' }, // 1 marketing
+    { hair: '#5d4e37', skin: '#f5d5b8', shirt: '#27ae60', pants: '#2c3e50' }, // 2 finance
+    { hair: '#8b4513', skin: '#deb887', shirt: '#9b59b6', pants: '#34495e' }, // 3 hr
+    { hair: '#333333', skin: '#f4c89e', shirt: '#f39c12', pants: '#2c3e50' }, // 4 supply-chain
+    { hair: '#c0392b', skin: '#fddcb5', shirt: '#1abc9c', pants: '#34495e' }, // 5 it-architect
+    { hair: '#2c3e50', skin: '#e8b88a', shirt: '#3498db', pants: '#2c3e50' }, // 6 project-mgr
+    { hair: '#6b3fa0', skin: '#f5d5b8', shirt: '#e67e22', pants: '#34495e' }, // 7 customer-svc
+    { hair: '#1a1a2e', skin: '#f4c89e', shirt: '#5b2c6f', pants: '#2c3e50' }, // 8 legal
+    { hair: '#4a3728', skin: '#e8b88a', shirt: '#2874a6', pants: '#34495e' }, // 9 product
+    { hair: '#5d4e37', skin: '#fddcb5', shirt: '#e91e63', pants: '#2c3e50' }, // 10 ux
+    { hair: '#333333', skin: '#f5d5b8', shirt: '#00bcd4', pants: '#34495e' }, // 11 content
+    { hair: '#8b4513', skin: '#f4c89e', shirt: '#1e8449', pants: '#2c3e50' }, // 12 bd
+    { hair: '#2d1b69', skin: '#deb887', shirt: '#d4ac0d', pants: '#34495e' }, // 13 quality
+    { hair: '#c0392b', skin: '#e8b88a', shirt: '#cb4335', pants: '#2c3e50' }, // 14 security
+    { hair: '#6b3fa0', skin: '#f4c89e', shirt: '#7d3c98', pants: '#34495e' }, // 15 hr-director
   ],
 
-  // Traditional Chinese speech bubble messages
-  speeches: [
-    '報告完成了！',
-    '數據分析中...',
-    '這個方案不錯',
-    '我來優化流程',
-    '客戶回覆了',
-    'KPI 達標 ✓',
-    '會議準備好了',
-    '系統運作正常',
-    '正在整理資料',
-    '自動化部署中',
-    '效率提升 23%',
-    '等一下開會',
-    '任務已派發',
-    '品質檢查通過',
-    '明天交報告',
-    '這組數據有趣',
-    '需要喝杯咖啡',
-    '排程已更新',
-    '預算審核完畢',
-    '新需求進來了',
-  ],
+  // Speech bubbles — delegated to I18n
+  get speeches() {
+    const arr = [];
+    for (let i = 0; i < I18n.speechCount; i++) arr.push(I18n.speech(i));
+    return arr;
+  },
 
   // Draw a character onto a small canvas, return ImageData
   drawCharacter(palette, dir, frame, state) {

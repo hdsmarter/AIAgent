@@ -472,6 +472,37 @@ body {
 }
 .settings-btn-save:hover { opacity: 0.85; }
 
+/* Settings select (language / chat mode) */
+.settings-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b949e'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 10px 6px;
+  padding-right: 28px;
+  cursor: pointer;
+}
+
+/* Settings mode fields container */
+.settings-mode-fields {
+  transition: opacity 0.2s;
+}
+
+/* Telegram deep link button */
+.chat-tg-link {
+  display: block;
+  text-align: center;
+  padding: 10px 16px;
+  margin: 8px 16px;
+  background: #0088cc;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.chat-tg-link:hover { opacity: 0.85; }
+
 /* ═══════════════════════════════════════════════
    Mobile Responsive
    ═══════════════════════════════════════════════ */

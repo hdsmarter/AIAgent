@@ -1,29 +1,40 @@
 /**
- * settings-panel.js — 設定面板（SRP）
- * Modal：閘道器位址、認證令牌、連線測試、全繁體中文
+ * settings-panel.js — Settings modal (SRP)
+ * Language selector, chat mode (Telegram/Gateway), connection settings
  */
 class SettingsPanel {
-  static UI_TEXT = {
-    title: '設定',
-    urlLabel: '閘道器位址',
-    urlPlaceholder: 'ws://localhost:18789',
-    tokenLabel: '認證令牌',
-    tokenPlaceholder: '（選填）',
-    testBtn: '測試連線',
-    saveBtn: '儲存',
-    cancelBtn: '取消',
-    testing: '測試中...',
-    testOk: '連線成功',
-    testFail: '連線失敗',
-    statusConnected: '已連線',
-    statusConnecting: '連線中...',
-    statusDisconnected: '未連線',
-  };
+  static get UI_TEXT() {
+    return {
+      title:             I18n.t('settings.title'),
+      langLabel:         I18n.t('settings.langLabel'),
+      chatModeLabel:     I18n.t('settings.chatModeLabel'),
+      chatModeTg:        I18n.t('settings.chatModeTg'),
+      chatModeGw:        I18n.t('settings.chatModeGw'),
+      urlLabel:          I18n.t('settings.urlLabel'),
+      urlPlaceholder:    I18n.t('settings.urlPlaceholder'),
+      tokenLabel:        I18n.t('settings.tokenLabel'),
+      tokenPlaceholder:  I18n.t('settings.tokenPlaceholder'),
+      tgTokenLabel:      I18n.t('settings.tgTokenLabel'),
+      tgChatIdLabel:     I18n.t('settings.tgChatIdLabel'),
+      testBtn:           I18n.t('settings.testBtn'),
+      saveBtn:           I18n.t('settings.saveBtn'),
+      cancelBtn:         I18n.t('settings.cancelBtn'),
+      testing:           I18n.t('settings.testing'),
+      testOk:            I18n.t('settings.testOk'),
+      testFail:          I18n.t('settings.testFail'),
+      statusConnected:   I18n.t('settings.statusConnected'),
+      statusConnecting:  I18n.t('settings.statusConnecting'),
+      statusDisconnected: I18n.t('settings.statusDisconnected'),
+    };
+  }
 
-  constructor(gatewayClient) {
-    this.gw = gatewayClient;
+  constructor(chatClient) {
+    this.cc = chatClient;
     this.isOpen = false;
     this._build();
+
+    // Re-render text labels on language change
+    I18n.onChange(() => this._updateTexts());
   }
 
   _build() {
@@ -39,23 +50,85 @@ class SettingsPanel {
     this.modal.className = 'settings-modal';
 
     // Title
-    const title = document.createElement('h2');
-    title.className = 'settings-title';
-    title.textContent = T.title;
-    this.modal.appendChild(title);
+    this.titleEl = document.createElement('h2');
+    this.titleEl.className = 'settings-title';
+    this.titleEl.textContent = T.title;
+    this.modal.appendChild(this.titleEl);
 
-    // URL field
-    this._addField(T.urlLabel, 'url');
-    this.urlInput = this.modal.querySelector('.settings-input-url');
+    // ── Language selector ────────────────────────
+    this.langGroup = document.createElement('div');
+    this.langGroup.className = 'settings-field';
+    this.langLabel = document.createElement('label');
+    this.langLabel.textContent = T.langLabel;
+    this.langSelect = document.createElement('select');
+    this.langSelect.className = 'settings-input settings-select';
+    const langOptions = [
+      { value: 'zh-TW', label: '繁體中文' },
+      { value: 'zh-CN', label: '简体中文' },
+      { value: 'en',    label: 'English' },
+    ];
+    for (const opt of langOptions) {
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      this.langSelect.appendChild(o);
+    }
+    this.langSelect.value = I18n.lang;
+    this.langGroup.appendChild(this.langLabel);
+    this.langGroup.appendChild(this.langSelect);
+    this.modal.appendChild(this.langGroup);
+
+    // ── Chat mode selector ──────────────────────
+    this.modeGroup = document.createElement('div');
+    this.modeGroup.className = 'settings-field';
+    this.modeLabel = document.createElement('label');
+    this.modeLabel.textContent = T.chatModeLabel;
+    this.modeSelect = document.createElement('select');
+    this.modeSelect.className = 'settings-input settings-select';
+    this._tgOption = document.createElement('option');
+    this._tgOption.value = 'telegram';
+    this._tgOption.textContent = T.chatModeTg;
+    this._gwOption = document.createElement('option');
+    this._gwOption.value = 'gateway';
+    this._gwOption.textContent = T.chatModeGw;
+    this.modeSelect.appendChild(this._tgOption);
+    this.modeSelect.appendChild(this._gwOption);
+    this.modeSelect.value = this.cc.mode;
+    this.modeSelect.addEventListener('change', () => this._toggleModeFields());
+    this.modeGroup.appendChild(this.modeLabel);
+    this.modeGroup.appendChild(this.modeSelect);
+    this.modal.appendChild(this.modeGroup);
+
+    // ── Telegram fields ─────────────────────────
+    this.tgFieldsContainer = document.createElement('div');
+    this.tgFieldsContainer.className = 'settings-mode-fields';
+
+    this._addFieldTo(this.tgFieldsContainer, T.tgTokenLabel, 'tg-token');
+    this.tgTokenInput = this.tgFieldsContainer.querySelector('.settings-input-tg-token');
+    this.tgTokenInput.value = this.cc.tgToken;
+
+    this._addFieldTo(this.tgFieldsContainer, T.tgChatIdLabel, 'tg-chat-id');
+    this.tgChatIdInput = this.tgFieldsContainer.querySelector('.settings-input-tg-chat-id');
+    this.tgChatIdInput.value = this.cc.tgChatId;
+
+    this.modal.appendChild(this.tgFieldsContainer);
+
+    // ── Gateway fields ──────────────────────────
+    this.gwFieldsContainer = document.createElement('div');
+    this.gwFieldsContainer.className = 'settings-mode-fields';
+
+    this._addFieldTo(this.gwFieldsContainer, T.urlLabel, 'url');
+    this.urlInput = this.gwFieldsContainer.querySelector('.settings-input-url');
     this.urlInput.placeholder = T.urlPlaceholder;
-    this.urlInput.value = this.gw.url;
+    this.urlInput.value = this.cc.url;
 
-    // Token field
-    this._addField(T.tokenLabel, 'token');
-    this.tokenInput = this.modal.querySelector('.settings-input-token');
+    this._addFieldTo(this.gwFieldsContainer, T.tokenLabel, 'token');
+    this.tokenInput = this.gwFieldsContainer.querySelector('.settings-input-token');
     this.tokenInput.placeholder = T.tokenPlaceholder;
     this.tokenInput.type = 'password';
-    this.tokenInput.value = this.gw.token;
+    this.tokenInput.value = this.cc.token;
+
+    this.modal.appendChild(this.gwFieldsContainer);
 
     // Status indicator
     this.statusEl = document.createElement('div');
@@ -76,21 +149,23 @@ class SettingsPanel {
     this.saveBtn.textContent = T.saveBtn;
     this.saveBtn.addEventListener('click', () => this._save());
 
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'settings-btn settings-btn-cancel';
-    cancelBtn.textContent = T.cancelBtn;
-    cancelBtn.addEventListener('click', () => this.close());
+    this.cancelBtn = document.createElement('button');
+    this.cancelBtn.className = 'settings-btn settings-btn-cancel';
+    this.cancelBtn.textContent = T.cancelBtn;
+    this.cancelBtn.addEventListener('click', () => this.close());
 
     btnRow.appendChild(this.testBtn);
-    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(this.cancelBtn);
     btnRow.appendChild(this.saveBtn);
     this.modal.appendChild(btnRow);
 
     document.body.appendChild(this.overlay);
     document.body.appendChild(this.modal);
+
+    this._toggleModeFields();
   }
 
-  _addField(label, name) {
+  _addFieldTo(container, label, name) {
     const group = document.createElement('div');
     group.className = 'settings-field';
     const lbl = document.createElement('label');
@@ -100,13 +175,38 @@ class SettingsPanel {
     input.className = 'settings-input settings-input-' + name;
     group.appendChild(lbl);
     group.appendChild(input);
-    this.modal.appendChild(group);
+    container.appendChild(group);
+  }
+
+  _toggleModeFields() {
+    const isTg = this.modeSelect.value === 'telegram';
+    this.tgFieldsContainer.style.display = isTg ? 'block' : 'none';
+    this.gwFieldsContainer.style.display = isTg ? 'none' : 'block';
+  }
+
+  /** Re-render text labels on language change */
+  _updateTexts() {
+    const T = SettingsPanel.UI_TEXT;
+    this.titleEl.textContent = T.title;
+    this.langLabel.textContent = T.langLabel;
+    this.modeLabel.textContent = T.chatModeLabel;
+    this._tgOption.textContent = T.chatModeTg;
+    this._gwOption.textContent = T.chatModeGw;
+    this.testBtn.textContent = T.testBtn;
+    this.saveBtn.textContent = T.saveBtn;
+    this.cancelBtn.textContent = T.cancelBtn;
+    this._updateStatus();
   }
 
   open() {
     this.isOpen = true;
-    this.urlInput.value = this.gw.url;
-    this.tokenInput.value = this.gw.token;
+    this.langSelect.value = I18n.lang;
+    this.modeSelect.value = this.cc.mode;
+    this.urlInput.value = this.cc.url;
+    this.tokenInput.value = this.cc.token;
+    this.tgTokenInput.value = this.cc.tgToken;
+    this.tgChatIdInput.value = this.cc.tgChatId;
+    this._toggleModeFields();
     this._updateStatus();
     this.overlay.classList.add('open');
     this.modal.classList.add('open');
@@ -125,24 +225,41 @@ class SettingsPanel {
       connecting: T.statusConnecting,
       disconnected: T.statusDisconnected,
     };
-    this.statusEl.textContent = map[this.gw.state] || T.statusDisconnected;
-    this.statusEl.className = 'settings-status settings-status-' + this.gw.state;
+    this.statusEl.textContent = map[this.cc.state] || T.statusDisconnected;
+    this.statusEl.className = 'settings-status settings-status-' + this.cc.state;
   }
 
   async _testConnection() {
     const T = SettingsPanel.UI_TEXT;
     this.testBtn.textContent = T.testing;
     this.testBtn.disabled = true;
-    const ok = await this.gw.testConnection(this.urlInput.value, this.tokenInput.value);
+
+    let ok;
+    if (this.modeSelect.value === 'telegram') {
+      ok = await this.cc.testConnection({ mode: 'telegram', tgToken: this.tgTokenInput.value });
+    } else {
+      ok = await this.cc.testConnection({ mode: 'gateway', url: this.urlInput.value, token: this.tokenInput.value });
+    }
+
     this.testBtn.textContent = ok ? T.testOk : T.testFail;
     this.testBtn.disabled = false;
-    setTimeout(() => { this.testBtn.textContent = T.testBtn; }, 2000);
+    setTimeout(() => { this.testBtn.textContent = SettingsPanel.UI_TEXT.testBtn; }, 2000);
   }
 
   _save() {
-    this.gw.saveSettings(this.urlInput.value, this.tokenInput.value);
-    this.gw.disconnect();
-    this.gw.connect();
+    // Apply language first
+    I18n.setLang(this.langSelect.value);
+
+    // Save chat client settings
+    this.cc.disconnect();
+    this.cc.saveSettings({
+      mode: this.modeSelect.value,
+      url: this.urlInput.value,
+      token: this.tokenInput.value,
+      tgToken: this.tgTokenInput.value,
+      tgChatId: this.tgChatIdInput.value,
+    });
+    this.cc.connect();
     this.close();
   }
 }

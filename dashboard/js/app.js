@@ -1,14 +1,17 @@
 /**
- * app.js — Orchestrator：整合 OfficeScene + StatusFetcher + GatewayClient + ChatPanel + Notifications + SettingsPanel
+ * app.js — Orchestrator: I18n + OfficeScene + StatusFetcher + ChatClient + ChatPanel + Notifications + SettingsPanel
  */
 (function () {
+  // Initialize i18n first
+  I18n.init();
+
   // Core modules
   const office = new OfficeScene('office');
   const fetcher = new StatusFetcher();
-  const gw = new GatewayClient();
+  const cc = new ChatClient();
   const notify = new Notifications();
   const chat = new ChatPanel();
-  const settings = new SettingsPanel(gw);
+  const settings = new SettingsPanel(cc);
 
   // ── Status bar ──────────────────────────────
   function updateStatusBar(data) {
@@ -22,7 +25,8 @@
 
     if (data.gateway) {
       const gwOk = data.gateway.status === 'running' || data.gateway.status === 'ok' || data.gateway.ok === true;
-      setPill('gw-pill', 'Gateway: ' + (gwOk ? 'Running' : 'Offline'), gwOk);
+      const gwLabel = gwOk ? I18n.t('app.gwRunning') : I18n.t('app.gwOffline');
+      setPill('gw-pill', 'Gateway: ' + gwLabel, gwOk);
     }
 
     const channels = data.channels;
@@ -58,7 +62,7 @@
       document.title = '\u26A1 Nexus Office \u2014 ' + data.version;
     }
 
-    document.getElementById('agent-count').textContent = office.agents.length + ' Agents';
+    document.getElementById('agent-count').textContent = office.agents.length + ' ' + I18n.t('app.agents');
   }
 
   // ── Clock ───────────────────────────────────
@@ -75,29 +79,33 @@
   // ── Wiring: OfficeScene → ChatPanel ─────────
   office.onAgentClick = (agent) => {
     chat.open(agent);
-    chat.setOffline(gw.state !== 'connected');
+    chat.setOffline(cc.state !== 'connected');
+    // Show Telegram fallback if both modes fail
+    chat.showTelegramFallback(cc.state !== 'connected');
   };
 
-  // ── Wiring: ChatPanel → GatewayClient ───────
+  // ── Wiring: ChatPanel → ChatClient ──────────
   chat.onSend = (agentId, text) => {
-    const sent = gw.sendChat(agentId, text);
+    const sent = cc.sendChat(agentId, text);
     if (!sent) {
-      chat.addMessage('system', '\u274C \u7121\u6CD5\u50B3\u9001\uFF0C\u9598\u9053\u5668\u672A\u9023\u7DDA');
+      chat.addMessage('system', '\u274C ' + I18n.t('chat.sendFail'));
     }
   };
 
-  // ── Wiring: GatewayClient events ────────────
-  gw.addEventListener('connected', () => {
-    notify.success('\u2705 \u5DF2\u9023\u7DDA\u5230\u9598\u9053\u5668');
+  // ── Wiring: ChatClient events ─────────────
+  cc.addEventListener('connected', () => {
+    notify.success('\u2705 ' + I18n.t('app.connected'));
     chat.setOffline(false);
+    chat.showTelegramFallback(false);
   });
 
-  gw.addEventListener('disconnected', () => {
-    notify.warning('\u26A0\uFE0F \u9598\u9053\u5668\u9023\u7DDA\u4E2D\u65B7');
+  cc.addEventListener('disconnected', () => {
+    notify.warning('\u26A0\uFE0F ' + I18n.t('app.disconnected'));
     chat.setOffline(true);
+    chat.showTelegramFallback(true);
   });
 
-  gw.addEventListener('message', (e) => {
+  cc.addEventListener('message', (e) => {
     const data = e.detail;
     if (data.type === 'chat' || data.type === 'response') {
       const agentId = data.agentId != null ? data.agentId : 0;
@@ -109,13 +117,16 @@
         chat.addMessage('agent', text);
       } else {
         // Notify if chat not open
-        const agent = office.agents.find(a => a.id === agentId);
-        const name = agent ? agent.name : 'Agent';
+        const name = I18n.agentName(agentId);
         notify.info(name + '\uFF1A' + (text.length > 30 ? text.slice(0, 30) + '\u2026' : text));
       }
 
       // Show speech bubble on agent
       office.showAgentSpeech(agentId, text);
+
+      // Briefly set agent as active
+      office.updateAgentStatus(agentId, 'active', text.length > 20 ? text.slice(0, 20) : text);
+      setTimeout(() => office.updateAgentStatus(agentId, 'idle'), 8000);
     }
 
     if (data.type === 'typing') {
@@ -129,11 +140,18 @@
     gearBtn.addEventListener('click', () => settings.open());
   }
 
+  // ── i18n: update status bar labels on lang change ──
+  I18n.onChange(() => {
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) settingsBtn.title = I18n.t('app.settings');
+    document.getElementById('agent-count').textContent = office.agents.length + ' ' + I18n.t('app.agents');
+  });
+
   // ── Initialize ──────────────────────────────
   fetcher.onChange(updateStatusBar);
   fetcher.startPolling();
   office.start();
-  gw.connect();
+  cc.connect();
 
   updateClock();
   setInterval(updateClock, 1000);
