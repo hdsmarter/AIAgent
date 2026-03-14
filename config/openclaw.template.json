@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openclaw.ai/schema/config.json",
+  "gateway": {
+    "port": 18789,
+    "host": "127.0.0.1"
+  },
+  "provider": {
+    "name": "openrouter",
+    "apiKey": "YOUR_OPENROUTER_API_KEY"
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "mode": "polling",
+      "token": "YOUR_TELEGRAM_BOT_TOKEN",
+      "streamMode": "partial"
+    },
+    "line": {
+      "enabled": true,
+      "mode": "webhook",
+      "channelAccessToken": "YOUR_LINE_CHANNEL_ACCESS_TOKEN",
+      "channelSecret": "YOUR_LINE_CHANNEL_SECRET"
+    }
+  },
+  "workspace": {
+    "path": "./workspace"
+  }
+}

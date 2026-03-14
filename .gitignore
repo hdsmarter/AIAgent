@@ -1,0 +1,31 @@
+# OpenClaw secrets
+openclaw.json
+auth-profiles.json
+credentials/
+*.key
+*.pem
+.env
+.env.*
+
+# Workspace runtime data (keep templates, exclude daily memory)
+workspace/memory/*.md
+!workspace/memory/.gitkeep
+
+# Backups
+.backups/
+
+# Node
+node_modules/
+.npm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/

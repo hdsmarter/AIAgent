@@ -1,0 +1,282 @@
+{
+  "timestamp": "2026-03-14T17:23:53Z",
+  "hostname": "Tony-MacBook-Pro-8.local",
+  "gateway": {
+  "ok": true,
+  "ts": 1773509026649,
+  "durationMs": 2454,
+  "channels": {
+    "telegram": {
+      "configured": true,
+      "running": false,
+      "lastStartAt": null,
+      "lastStopAt": null,
+      "lastError": null,
+      "tokenSource": "none",
+      "probe": {
+        "ok": true,
+        "status": null,
+        "error": null,
+        "elapsedMs": 2311,
+        "bot": {
+          "id": 8278696228,
+          "username": "hdsmarterbot",
+          "canJoinGroups": true,
+          "canReadAllGroupMessages": false,
+          "supportsInlineQueries": false
+        },
+        "webhook": {
+          "url": "",
+          "hasCustomCert": false
+        }
+      },
+      "lastProbeAt": 1773509026507,
+      "mode": null,
+      "accountId": "default",
+      "accounts": {
+        "default": {
+          "configured": true,
+          "running": false,
+          "lastStartAt": null,
+          "lastStopAt": null,
+          "lastError": null,
+          "tokenSource": "none",
+          "probe": {
+            "ok": true,
+            "status": null,
+            "error": null,
+            "elapsedMs": 2311,
+            "bot": {
+              "id": 8278696228,
+              "username": "hdsmarterbot",
+              "canJoinGroups": true,
+              "canReadAllGroupMessages": false,
+              "supportsInlineQueries": false
+            },
+            "webhook": {
+              "url": "",
+              "hasCustomCert": false
+            }
+          },
+          "lastProbeAt": 1773509026507,
+          "mode": null,
+          "accountId": "default"
+        }
+      }
+    },
+    "line": {
+      "configured": true,
+      "running": false,
+      "lastStartAt": null,
+      "lastStopAt": null,
+      "lastError": null,
+      "tokenSource": "none",
+      "probe": {
+        "ok": false,
+        "error": "401 - Unauthorized"
+      },
+      "lastProbeAt": 1773509026649,
+      "mode": null,
+      "accountId": "default",
+      "accounts": {
+        "default": {
+          "configured": true,
+          "running": false,
+          "lastStartAt": null,
+          "lastStopAt": null,
+          "lastError": null,
+          "tokenSource": "none",
+          "probe": {
+            "ok": false,
+            "error": "401 - Unauthorized"
+          },
+          "lastProbeAt": 1773509026649,
+          "mode": null,
+          "accountId": "default"
+        }
+      }
+    }
+  },
+  "channelOrder": [
+    "telegram",
+    "line"
+  ],
+  "channelLabels": {
+    "telegram": "Telegram",
+    "line": "LINE"
+  },
+  "heartbeatSeconds": 1800,
+  "defaultAgentId": "main",
+  "agents": [
+    {
+      "agentId": "main",
+      "isDefault": true,
+      "heartbeat": {
+        "enabled": true,
+        "every": "30m",
+        "everyMs": 1800000,
+        "prompt": "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.",
+        "target": "none",
+        "ackMaxChars": 300
+      },
+      "sessions": {
+        "path": "/Users/tonyjiang/.openclaw/agents/main/sessions/sessions.json",
+        "count": 9,
+        "recent": [
+          {
+            "key": "agent:main:main",
+            "updatedAt": 1773508922379,
+            "age": 101816
+          },
+          {
+            "key": "agent:main:line:group:c82fd7ed47158a48f5ffe75b29d2fceb0",
+            "updatedAt": 1773018127128,
+            "age": 490897067
+          },
+          {
+            "key": "agent:main:cron:af49db5d-3aa9-4fdb-80a7-d43368a2b1fe",
+            "updatedAt": 1773018000027,
+            "age": 491024168
+          },
+          {
+            "key": "agent:main:line:group:group:c9051d3971c749159da8f81e1ae911831",
+            "updatedAt": 1769572051457,
+            "age": 3936972738
+          },
+          {
+            "key": "agent:main:line:group:group:ce82cc7338922a32a649ae3fe9414910e",
+            "updatedAt": 1769569442529,
+            "age": 3939581666
+          }
+        ]
+      }
+    }
+  ],
+  "sessions": {
+    "path": "/Users/tonyjiang/.openclaw/agents/main/sessions/sessions.json",
+    "count": 9,
+    "recent": [
+      {
+        "key": "agent:main:main",
+        "updatedAt": 1773508922379,
+        "age": 101816
+      },
+      {
+        "key": "agent:main:line:group:c82fd7ed47158a48f5ffe75b29d2fceb0",
+        "updatedAt": 1773018127128,
+        "age": 490897067
+      },
+      {
+        "key": "agent:main:cron:af49db5d-3aa9-4fdb-80a7-d43368a2b1fe",
+        "updatedAt": 1773018000027,
+        "age": 491024168
+      },
+      {
+        "key": "agent:main:line:group:group:c9051d3971c749159da8f81e1ae911831",
+        "updatedAt": 1769572051457,
+        "age": 3936972738
+      },
+      {
+        "key": "agent:main:line:group:group:ce82cc7338922a32a649ae3fe9414910e",
+        "updatedAt": 1769569442529,
+        "age": 3939581666
+      }
+    ]
+  }
+},
+  "channels": {
+  "ts": 1773509032534,
+  "channelOrder": [
+    "telegram",
+    "line"
+  ],
+  "channelLabels": {
+    "telegram": "Telegram",
+    "line": "LINE"
+  },
+  "channelDetailLabels": {
+    "telegram": "Telegram Bot",
+    "line": "LINE Bot"
+  },
+  "channelSystemImages": {
+    "telegram": "paperplane",
+    "line": "message.fill"
+  },
+  "channelMeta": [
+    {
+      "id": "telegram",
+      "label": "Telegram",
+      "detailLabel": "Telegram Bot",
+      "systemImage": "paperplane"
+    },
+    {
+      "id": "line",
+      "label": "LINE",
+      "detailLabel": "LINE Bot",
+      "systemImage": "message.fill"
+    }
+  ],
+  "channels": {
+    "telegram": {
+      "configured": true,
+      "running": true,
+      "lastStartAt": 1773507121438,
+      "lastStopAt": null,
+      "lastError": null,
+      "tokenSource": "config",
+      "lastProbeAt": null,
+      "mode": "polling"
+    },
+    "line": {
+      "configured": true,
+      "running": true,
+      "lastStartAt": 1773507121439,
+      "lastStopAt": null,
+      "lastError": null,
+      "tokenSource": "config",
+      "lastProbeAt": null,
+      "mode": "webhook"
+    }
+  },
+  "channelAccounts": {
+    "telegram": [
+      {
+        "accountId": "default",
+        "enabled": true,
+        "configured": true,
+        "tokenSource": "config",
+        "tokenStatus": "available",
+        "running": true,
+        "lastStartAt": 1773507121438,
+        "lastStopAt": null,
+        "lastError": null,
+        "mode": "polling",
+        "allowUnmentionedGroups": false,
+        "lastInboundAt": null,
+        "lastOutboundAt": null
+      }
+    ],
+    "line": [
+      {
+        "accountId": "default",
+        "enabled": true,
+        "configured": true,
+        "running": true,
+        "lastStartAt": 1773507121439,
+        "lastStopAt": null,
+        "lastError": null,
+        "lastInboundAt": null,
+        "lastOutboundAt": null,
+        "tokenSource": "config",
+        "mode": "webhook"
+      }
+    ]
+  },
+  "channelDefaultAccountId": {
+    "telegram": "default",
+    "line": "default"
+  }
+},
+  "sessions": [],
+  "version": "OpenClaw 2026.3.13 (61d171a)"
+}

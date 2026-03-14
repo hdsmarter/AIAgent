@@ -1,0 +1,48 @@
+name: Update Dashboard Status
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'dashboard/**'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate status with timestamp
+        run: |
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          jq -n \
+            --arg ts "$TIMESTAMP" \
+            --arg host "github-actions" \
+            --arg ver "OpenClaw 2026.3.13" \
+            '{
+              timestamp: $ts,
+              hostname: $host,
+              gateway: { status: "remote", note: "Gateway runs locally" },
+              channels: {
+                telegram: { status: "unknown", note: "Local gateway only" },
+                line: { status: "unknown", note: "Local gateway only" }
+              },
+              sessions: [],
+              version: $ver
+            }' > dashboard/data/status.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+          publish_branch: gh-pages
