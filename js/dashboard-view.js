@@ -82,10 +82,7 @@ class DashboardView {
 
     this._statCards = {};
     var statItems = [
-      { id: 'agents', icon: SvgIcons.robot, labelKey: 'dash.agentCount', value: '16', bg: 'var(--accent)' },
-      { id: 'gateway', icon: SvgIcons.link, labelKey: 'dash.gatewayStatus', value: '--', bg: 'var(--green)' },
-      { id: 'telegram', icon: SvgIcons.chat, labelKey: 'dash.telegramStatus', value: '--', bg: '#0088cc' },
-      { id: 'line', icon: SvgIcons.chat, labelKey: 'dash.lineStatus', value: '--', bg: '#06c755' },
+      { id: 'agents', icon: SvgIcons.robot, labelKey: 'dash.agentCount', value: String(PixelSprites.agentPalettes.length), bg: 'var(--accent)' },
     ];
 
     for (var s = 0; s < statItems.length; s++) {
@@ -186,46 +183,6 @@ class DashboardView {
 
   updateStatus(data) {
     this._statusData = data;
-    if (!data) return;
-
-    // Gateway
-    if (data.gateway && this._statCards.gateway) {
-      var gwOk = data.gateway.status === 'running' || data.gateway.status === 'ok' || data.gateway.ok === true;
-      this._statCards.gateway.valueEl.textContent = gwOk ? I18n.t('app.gwRunning') : I18n.t('app.gwOffline');
-      this._statCards.gateway.valueEl.style.color = gwOk ? 'var(--green)' : 'var(--red)';
-    }
-
-    // Channels
-    var channels = data.channels;
-    if (channels) {
-      // Telegram
-      var tgOk = null;
-      if (channels.telegram) {
-        tgOk = channels.telegram.running !== undefined ? channels.telegram.running :
-               (channels.telegram.status === 'running' || channels.telegram.status === 'ok');
-      }
-      if (channels.channels && channels.channels.telegram) {
-        tgOk = channels.channels.telegram.running;
-      }
-      if (this._statCards.telegram) {
-        this._statCards.telegram.valueEl.textContent = tgOk ? 'Running' : tgOk === false ? 'Off' : '--';
-        this._statCards.telegram.valueEl.style.color = tgOk ? 'var(--green)' : tgOk === false ? 'var(--red)' : '';
-      }
-
-      // LINE
-      var lineOk = null;
-      if (channels.line) {
-        lineOk = channels.line.running !== undefined ? channels.line.running :
-                 (channels.line.status === 'running' || channels.line.status === 'ok');
-      }
-      if (channels.channels && channels.channels.line) {
-        lineOk = channels.channels.line.running;
-      }
-      if (this._statCards.line) {
-        this._statCards.line.valueEl.textContent = lineOk ? 'Running' : lineOk === false ? 'Off' : '--';
-        this._statCards.line.valueEl.style.color = lineOk ? 'var(--green)' : lineOk === false ? 'var(--red)' : '';
-      }
-    }
   }
 
   addRecentChat(agentId, text, time) {

@@ -44,6 +44,7 @@ var SvgIcons = {
   agentBug:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a3 3 0 00-3 3H5a1 1 0 000 2h1.1A5 5 0 006 8H3a1 1 0 000 2h3v1H3a1 1 0 000 2h3c.2 1.1.7 2 1.3 2.7L5 17.3a1 1 0 001.4 1.4L8.5 16a4 4 0 003 0l2.1 2.7a1 1 0 001.4-1.4l-2.3-1.6c.6-.7 1.1-1.6 1.3-2.7h3a1 1 0 000-2h-3v-1h3a1 1 0 000-2h-3a5 5 0 00-.1-1H15a1 1 0 000-2h-2a3 3 0 00-3-3zm0 2a1 1 0 011 1H9a1 1 0 011-1zm-2 4h4a3 3 0 010 6H8a3 3 0 010-6z"/></svg>',
   agentEye:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4C5 4 1.7 8.3 1 10c.7 1.7 4 6 9 6s8.3-4.3 9-6c-.7-1.7-4-6-9-6zm0 2a4 4 0 110 8 4 4 0 010-8zm0 2a2 2 0 100 4 2 2 0 000-4z"/></svg>',
   agentCrown:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 14l2-8 3 4 3-6 3 6 3-4 2 8H2zm1.5 1h13a1 1 0 010 2h-13a1 1 0 010-2z"/></svg>',
+  agentHandshake: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 8l3-3 2.5 1L10 4l2.5 2L15 5l3 3-2 2-1.5-.5L12 12l-2-1-2 1-2.5-2.5L4 10 2 8zm4 5l2 2 2-1 2 1 2-2 1.5 1L12 17H8l-3.5-3L6 13z"/></svg>',
 };
 
 /**
@@ -66,6 +67,7 @@ var AgentIconMap = {
   13: 'agentBug',       // 品質保證工程師
   14: 'agentEye',       // 資安分析師
   15: 'agentCrown',     // 人資總監
+  16: 'agentHandshake', // PUE 業務助理
 };
 
 /**
@@ -217,7 +219,7 @@ class NavSidebar {
     agentDot.style.background = 'var(--accent)';
     agentStat.appendChild(agentDot);
     this._agentCountEl = document.createElement('span');
-    this._agentCountEl.textContent = '16 AI ' + I18n.t('nav.agents');
+    this._agentCountEl.textContent = (PixelSprites.agentPalettes.length) + ' AI ' + I18n.t('nav.agents');
     agentStat.appendChild(this._agentCountEl);
     stats.appendChild(agentStat);
 
@@ -347,7 +349,7 @@ class NavSidebar {
     });
     if (this._agentCountEl) {
       var num = this._agentCountEl.textContent.match(/\d+/);
-      this._agentCountEl.textContent = (num ? num[0] : '16') + ' AI ' + I18n.t('nav.agents');
+      this._agentCountEl.textContent = (num ? num[0] : String(PixelSprites.agentPalettes.length)) + ' AI ' + I18n.t('nav.agents');
     }
   }
 }

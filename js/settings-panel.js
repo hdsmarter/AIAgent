@@ -110,6 +110,45 @@ class SettingsPanel {
     var connTab = document.createElement('div');
     connTab.className = 'settings-tab-content' + (this._activeTab === 'connection' ? ' active' : '');
 
+    // ── Service Status Cards ──────────────────
+    this._statusCards = {};
+    var statusBar = document.createElement('div');
+    statusBar.className = 'settings-status-bar';
+
+    var statusItems = [
+      { id: 'gateway', icon: SvgIcons.link, labelKey: 'dash.gatewayStatus', value: '--', bg: 'var(--green)' },
+      { id: 'telegram', icon: SvgIcons.chat, labelKey: 'dash.telegramStatus', value: '--', bg: '#0088cc' },
+      { id: 'line', icon: SvgIcons.chat, labelKey: 'dash.lineStatus', value: '--', bg: '#06c755' },
+    ];
+
+    for (var si = 0; si < statusItems.length; si++) {
+      var item = statusItems[si];
+      var card = document.createElement('div');
+      card.className = 'settings-status-card';
+
+      var iconEl = document.createElement('div');
+      iconEl.className = 'settings-status-card-icon';
+      iconEl.style.background = item.bg;
+      iconEl.appendChild(svgFromTemplate(item.icon));
+      card.appendChild(iconEl);
+
+      var infoEl = document.createElement('div');
+      infoEl.className = 'settings-status-card-info';
+      var valEl = document.createElement('div');
+      valEl.className = 'settings-status-card-value';
+      valEl.textContent = item.value;
+      var lblEl = document.createElement('div');
+      lblEl.className = 'settings-status-card-label';
+      lblEl.textContent = I18n.t(item.labelKey);
+      infoEl.appendChild(valEl);
+      infoEl.appendChild(lblEl);
+      card.appendChild(infoEl);
+
+      this._statusCards[item.id] = { valueEl: valEl };
+      statusBar.appendChild(card);
+    }
+    connTab.appendChild(statusBar);
+
     // Chat mode selector
     this._addField(connTab, T.chatModeLabel, 'select', 'mode', [
       { value: 'telegram', label: T.chatModeTg },
@@ -388,6 +427,47 @@ class SettingsPanel {
     var activeTab = this._activeTab;
     this._build();
     this._switchTab(activeTab);
+  }
+
+  updateStatus(data) {
+    if (!data || !this._statusCards) return;
+
+    // Gateway
+    if (data.gateway && this._statusCards.gateway) {
+      var gwOk = data.gateway.status === 'running' || data.gateway.status === 'ok' || data.gateway.ok === true;
+      this._statusCards.gateway.valueEl.textContent = gwOk ? I18n.t('app.gwRunning') : I18n.t('app.gwOffline');
+      this._statusCards.gateway.valueEl.style.color = gwOk ? 'var(--green)' : 'var(--red)';
+    }
+
+    // Channels
+    var channels = data.channels;
+    if (channels) {
+      var tgOk = null;
+      if (channels.telegram) {
+        tgOk = channels.telegram.running !== undefined ? channels.telegram.running :
+               (channels.telegram.status === 'running' || channels.telegram.status === 'ok');
+      }
+      if (channels.channels && channels.channels.telegram) {
+        tgOk = channels.channels.telegram.running;
+      }
+      if (this._statusCards.telegram) {
+        this._statusCards.telegram.valueEl.textContent = tgOk ? 'Running' : tgOk === false ? 'Off' : '--';
+        this._statusCards.telegram.valueEl.style.color = tgOk ? 'var(--green)' : tgOk === false ? 'var(--red)' : '';
+      }
+
+      var lineOk = null;
+      if (channels.line) {
+        lineOk = channels.line.running !== undefined ? channels.line.running :
+                 (channels.line.status === 'running' || channels.line.status === 'ok');
+      }
+      if (channels.channels && channels.channels.line) {
+        lineOk = channels.channels.line.running;
+      }
+      if (this._statusCards.line) {
+        this._statusCards.line.valueEl.textContent = lineOk ? 'Running' : lineOk === false ? 'Off' : '--';
+        this._statusCards.line.valueEl.style.color = lineOk ? 'var(--green)' : lineOk === false ? 'var(--red)' : '';
+      }
+    }
   }
 
   // Legacy compat: open/close (no-op since now inline)
