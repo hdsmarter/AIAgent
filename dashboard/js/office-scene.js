@@ -590,18 +590,20 @@ class OfficeScene {
   resize() {
     const dpr = window.devicePixelRatio || 1;
 
-    // Use parent container size if available, otherwise full viewport
     const container = this.canvas.parentElement;
     const W = container ? container.clientWidth : window.innerWidth;
     const H = container ? container.clientHeight : window.innerHeight;
 
+    // Guard: skip resize during sidebar animation (0-size container)
+    if (W < 100 || H < 100) return;
+
     const officeW = this.cols * this.T;
     const officeH = this.rows * this.T;
 
-    // Fill width first, then check if height fits
+    // Fill width, fit height — no horizontal gaps
     const scaleW = W / officeW;
     const scaleH = H / officeH;
-    const baseScale = Math.max(scaleW, scaleH);
+    const baseScale = scaleW;  // always fill width
 
     this.canvas.width = W * dpr;
     this.canvas.height = H * dpr;
@@ -609,8 +611,11 @@ class OfficeScene {
     this.canvas.style.height = H + 'px';
 
     this.scale = baseScale * dpr;
+    // Center horizontally (should be ~0 since we fill width)
     this.offsetX = (W * dpr - officeW * this.scale) / 2;
-    this.offsetY = (H * dpr - officeH * this.scale) / 2;
+    // If grid is shorter than canvas, center vertically; otherwise top-align
+    const renderedH = officeH * this.scale;
+    this.offsetY = renderedH < H * dpr ? (H * dpr - renderedH) / 2 : 0;
   }
 
   onMouseMove(e) {
@@ -754,14 +759,19 @@ class OfficeScene {
       }
     }
 
-    // 4. Speech bubbles (always on top)
+    // 4. Agent name labels (drawn after all furniture so never covered)
+    for (const agent of this.agents) {
+      this._renderNameLabel(agent);
+    }
+
+    // 5. Speech bubbles (always on top)
     for (const agent of this.agents) {
       if (agent.speech) {
         PixelSprites.drawBubble(ctx, agent.x, agent.y - DRAW_H - 4, agent.speech);
       }
     }
 
-    // 5. Selected agent glow
+    // 6. Selected agent glow
     if (this.selectedAgent) {
       const a = this.selectedAgent;
       const glow = 0.3 + 0.3 * Math.sin(Date.now() / 400);
@@ -770,7 +780,7 @@ class OfficeScene {
       ctx.strokeRect(a.x - DRAW_W / 2 - 3, a.y - DRAW_H - 3, DRAW_W + 6, DRAW_H + 8);
     }
 
-    // 6. Hovered agent highlight
+    // 7. Hovered agent highlight
     if (this.hoveredAgent && this.hoveredAgent !== this.selectedAgent) {
       ctx.strokeStyle = p.hoverGlow;
       ctx.lineWidth = 1;
@@ -842,10 +852,14 @@ class OfficeScene {
     this.ctx.shadowColor = 'transparent';
     this.ctx.shadowBlur = 0;
 
-    // Name label — truncate to max tile width to prevent overlap
+  }
+
+  // Name label drawn in separate pass (step 4) so furniture never covers it
+  _renderNameLabel(agent) {
+    const p = ThemePalette.current;
     const fullName = I18n.agentName(agent.id);
     this.ctx.font = 'bold 8px "Noto Sans TC", "PingFang TC", sans-serif';
-    const maxLabelW = this.T * 1.8;  // max ~1.8 tiles wide
+    const maxLabelW = this.T * 1.8;
     let name = fullName;
     let nameW = this.ctx.measureText(name).width;
     if (nameW > maxLabelW) {
