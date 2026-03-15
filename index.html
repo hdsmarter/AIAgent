@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚡ HD Smarter 天使 — OpenClaw AI Agents</title>
+  <title>⚡ HD 智動化 — AI Agent Dashboard</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <!-- Status Bar -->
-  <div class="status-bar" role="banner">
+  <header class="status-bar" role="banner">
     <div class="status-left">
-      <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle agent list">☰</button>
-      <span class="logo">⚡ HD Smarter 天使</span>
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">☰</button>
+      <span class="logo">⚡ HD 智動化</span>
       <span class="status-pill" id="gw-pill">Gateway: --</span>
       <span class="status-pill" id="tg-pill">Telegram: --</span>
       <span class="status-pill" id="line-pill">LINE: --</span>
@@ -20,30 +23,58 @@
     <div class="status-right">
       <span id="agent-count" aria-live="polite">0 Agents</span>
       <span id="clock" aria-label="Clock"></span>
+      <button class="view-toggle-btn" id="view-toggle-btn" title="Toggle view" aria-label="Toggle workspace / office view">🏢</button>
       <button class="theme-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">☀</button>
       <button class="settings-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
     </div>
+  </header>
+
+  <!-- App Shell: 3-column grid -->
+  <div class="app-shell" id="app-shell">
+    <!-- Left Sidebar -->
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Agent list">
+      <div class="sidebar-header">
+        <span class="sidebar-title" id="sidebar-title">AI 助理團隊</span>
+      </div>
+      <div class="sidebar-search">
+        <input type="text" class="sidebar-search-input" id="sidebar-search" placeholder="搜尋助理…" aria-label="Search agents">
+      </div>
+      <ul class="sidebar-agent-list" id="sidebar-agent-list" role="list"></ul>
+    </aside>
+
+    <!-- Main Content (Workspace or Office Scene) -->
+    <main class="main-content" id="main-content" role="main">
+      <!-- Workspace View (default) -->
+      <div class="workspace-view" id="workspace-view">
+        <div class="workspace-grid" id="workspace-grid"></div>
+      </div>
+      <!-- Office Scene View (lazy-loaded) -->
+      <div class="office-view" id="office-view" style="display:none">
+        <canvas id="office" role="img" aria-label="Manufacturing HQ pixel art office scene"></canvas>
+      </div>
+    </main>
+
+    <!-- Chat Panel (always visible on desktop) -->
+    <section class="chat-panel" id="chat-panel-section" role="complementary" aria-label="Chat">
+      <!-- Chat content built by chat-panel.js -->
+    </section>
   </div>
 
-  <!-- Left Agent Sidebar -->
-  <aside class="agent-sidebar" id="agent-sidebar" role="navigation" aria-label="Agent list">
-    <div class="sidebar-header">
-      <span class="sidebar-title" id="sidebar-title">Agents</span>
-    </div>
-    <ul class="sidebar-agent-list" id="sidebar-agent-list" role="list"></ul>
-  </aside>
-
-  <!-- Main Canvas -->
-  <canvas id="office" role="img" aria-label="Manufacturing HQ pixel art office scene"></canvas>
-
-  <!-- Agent Info Panel (shown on hover) -->
+  <!-- Agent Info Panel (shown on hover in Office view) -->
   <div class="agent-panel" id="agent-panel" style="display:none" role="tooltip">
     <div class="agent-panel-name" id="panel-name"></div>
     <div class="agent-panel-role" id="panel-role"></div>
     <div class="agent-panel-status" id="panel-status"></div>
   </div>
 
-  <!-- i18n + auth gate MUST load first -->
+  <!-- Mobile bottom nav (≤768px) -->
+  <nav class="mobile-nav" id="mobile-nav" role="tablist" aria-label="Navigation">
+    <button class="mobile-nav-btn active" data-tab="agents" role="tab" aria-selected="true">👥</button>
+    <button class="mobile-nav-btn" data-tab="workspace" role="tab" aria-selected="false">📊</button>
+    <button class="mobile-nav-btn" data-tab="chat" role="tab" aria-selected="false">💬</button>
+  </nav>
+
+  <!-- Scripts: i18n + auth gate first -->
   <script src="js/i18n.js"></script>
   <script src="js/auth-gate.js"></script>
   <script src="js/pixel-sprites.js"></script>
@@ -53,6 +84,8 @@
   <script src="js/notifications.js"></script>
   <script src="js/chat-panel.js"></script>
   <script src="js/settings-panel.js"></script>
+  <script src="js/view-manager.js"></script>
+  <script src="js/agent-sidebar.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

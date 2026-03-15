@@ -8,6 +8,7 @@
 class OfficeScene {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
+    if (!this.canvas) return;
     this.ctx = this.canvas.getContext('2d');
     this.T = TILE;
 
@@ -475,24 +476,23 @@ class OfficeScene {
 
   resize() {
     const dpr = window.devicePixelRatio || 1;
-    const W = window.innerWidth;
-    const H = window.innerHeight;
+
+    // Use parent container size if available, otherwise full viewport
+    const container = this.canvas.parentElement;
+    const W = container ? container.clientWidth : window.innerWidth;
+    const H = container ? container.clientHeight : window.innerHeight;
 
     this.canvas.width = W * dpr;
     this.canvas.height = H * dpr;
     this.canvas.style.width = W + 'px';
     this.canvas.style.height = H + 'px';
 
-    const statusBar = document.querySelector('.status-bar');
-    const barH = statusBar ? statusBar.offsetHeight : 40;
-
     const officeW = this.cols * this.T;
     const officeH = this.rows * this.T;
-    const viewH = H - barH;
 
-    this.scale = Math.min(W / officeW, viewH / officeH) * dpr;
+    this.scale = Math.min(W / officeW, H / officeH) * dpr;
     this.offsetX = (W * dpr - officeW * this.scale) / 2;
-    this.offsetY = barH * dpr + (viewH * dpr - officeH * this.scale) / 2;
+    this.offsetY = (H * dpr - officeH * this.scale) / 2;
   }
 
   onMouseMove(e) {
