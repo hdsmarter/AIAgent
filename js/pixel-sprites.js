@@ -148,10 +148,10 @@ const ThemePalette = {
   set(theme) {
     this._current = theme;
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('nexus-theme', theme);
+    localStorage.setItem('hdsmarter-theme', theme);
   },
   init() {
-    this.set(localStorage.getItem('nexus-theme') || 'light');
+    this.set(localStorage.getItem('hdsmarter-theme') || 'light');
   },
   toggle() {
     this.set(this._current === 'light' ? 'dark' : 'light');

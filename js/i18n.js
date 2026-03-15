@@ -60,6 +60,7 @@ const I18n = {
     'app.themeLight':   { 'zh-TW': '\u6DFA\u8272\u4E3B\u984C',        'zh-CN': '\u6D45\u8272\u4E3B\u9898',       en: 'Light Theme' },
     'app.themeDark':    { 'zh-TW': '\u6DF1\u8272\u4E3B\u984C',        'zh-CN': '\u6DF1\u8272\u4E3B\u9898',       en: 'Dark Theme' },
     'app.themeToggle':  { 'zh-TW': '\u5207\u63DB\u4E3B\u984C',        'zh-CN': '\u5207\u6362\u4E3B\u9898',       en: 'Toggle Theme' },
+    'app.agentList':    { 'zh-TW': 'Agent \u5217\u8868',     'zh-CN': 'Agent \u5217\u8868',     en: 'Agent List' },
 
     // ── Office Scene — State Names ──────────────
     'state.type':  { 'zh-TW': '\u5DE5\u4F5C\u4E2D',   'zh-CN': '\u5DE5\u4F5C\u4E2D',   en: 'Working' },
@@ -151,7 +152,7 @@ const I18n = {
   setLang(lang) {
     if (!this.strings['chat.title'][lang]) lang = 'zh-TW';
     this._lang = lang;
-    localStorage.setItem('nexus-lang', lang);
+    localStorage.setItem('hdsmarter-lang', lang);
     document.documentElement.lang = lang === 'zh-TW' ? 'zh-Hant' : lang === 'zh-CN' ? 'zh-Hans' : lang;
     this._listeners.forEach(fn => fn(lang));
   },
@@ -170,7 +171,7 @@ const I18n = {
   },
 
   init() {
-    const saved = localStorage.getItem('nexus-lang');
+    const saved = localStorage.getItem('hdsmarter-lang');
     const lang = saved || this.detect();
     this.setLang(lang);
   },

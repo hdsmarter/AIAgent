@@ -73,7 +73,7 @@
     }
 
     if (data.version) {
-      document.title = '\u26A1 Nexus Office \u2014 ' + data.version;
+      document.title = '\u26A1 HD Smarter \u5929\u4F7F \u2014 ' + data.version;
     }
 
     document.getElementById('agent-count').textContent = office.agents.length + ' ' + I18n.t('app.agents');
@@ -184,11 +184,72 @@
     document.getElementById('agent-count').textContent = office.agents.length + ' ' + I18n.t('app.agents');
   });
 
+  // ── Agent Sidebar ──────────────────────────
+  const sidebar = document.getElementById('agent-sidebar');
+  const sidebarList = document.getElementById('sidebar-agent-list');
+  const sidebarTitle = document.getElementById('sidebar-title');
+  const hamburger = document.getElementById('hamburger-btn');
+
+  function populateSidebar() {
+    sidebarList.textContent = '';
+    if (sidebarTitle) sidebarTitle.textContent = I18n.t('app.agentList');
+    for (const agent of office.agents) {
+      const li = document.createElement('li');
+      li.className = 'sidebar-agent-item';
+      li.setAttribute('role', 'listitem');
+      li.dataset.agentId = agent.id;
+
+      const dot = document.createElement('span');
+      dot.className = 'agent-color-dot';
+      const palette = PixelSprites.agentPalettes[agent.id];
+      dot.style.backgroundColor = palette ? palette.shirt : '#888';
+
+      const info = document.createElement('div');
+      const name = document.createElement('div');
+      name.className = 'sidebar-agent-name';
+      name.textContent = I18n.agentName(agent.id);
+      const role = document.createElement('div');
+      role.className = 'sidebar-agent-role';
+      role.textContent = I18n.agentRole(agent.id);
+      info.appendChild(name);
+      info.appendChild(role);
+
+      li.appendChild(dot);
+      li.appendChild(info);
+
+      li.addEventListener('click', () => {
+        office.selectedAgent = agent;
+        office.onAgentClick(agent);
+        sidebar.classList.remove('open');
+      });
+
+      sidebarList.appendChild(li);
+    }
+  }
+
+  if (hamburger) {
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  }
+
+  // Close sidebar when clicking outside
+  document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('open') &&
+        !sidebar.contains(e.target) &&
+        e.target !== hamburger) {
+      sidebar.classList.remove('open');
+    }
+  });
+
+  I18n.onChange(() => populateSidebar());
+
   // ── Initialize ──────────────────────────────
   fetcher.onChange(updateStatusBar);
   fetcher.startPolling();
   office.start();
   cc.connect();
+  populateSidebar();
 
   updateClock();
   setInterval(updateClock, 1000);

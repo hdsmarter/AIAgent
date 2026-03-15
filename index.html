@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚡ Nexus Office — OpenClaw AI Agents</title>
+  <title>⚡ HD Smarter 天使 — OpenClaw AI Agents</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -11,7 +11,8 @@
   <!-- Status Bar -->
   <div class="status-bar" role="banner">
     <div class="status-left">
-      <span class="logo">⚡ Nexus HQ</span>
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle agent list">☰</button>
+      <span class="logo">⚡ HD Smarter 天使</span>
       <span class="status-pill" id="gw-pill">Gateway: --</span>
       <span class="status-pill" id="tg-pill">Telegram: --</span>
       <span class="status-pill" id="line-pill">LINE: --</span>
@@ -23,6 +24,14 @@
       <button class="settings-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
     </div>
   </div>
+
+  <!-- Left Agent Sidebar -->
+  <aside class="agent-sidebar" id="agent-sidebar" role="navigation" aria-label="Agent list">
+    <div class="sidebar-header">
+      <span class="sidebar-title" id="sidebar-title">Agents</span>
+    </div>
+    <ul class="sidebar-agent-list" id="sidebar-agent-list" role="list"></ul>
+  </aside>
 
   <!-- Main Canvas -->
   <canvas id="office" role="img" aria-label="Manufacturing HQ pixel art office scene"></canvas>

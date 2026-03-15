@@ -1,4 +1,4 @@
-/* Nexus Office Dashboard — Enterprise Design System
+/* HD Smarter 天使 Dashboard — Enterprise Design System
    Dual theme (light default / dark toggle)
    Zero hardcoded colors — all via CSS custom properties */
 
@@ -211,6 +211,104 @@ body {
 .settings-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   Hamburger Button
+   ═══════════════════════════════════════════════ */
+.hamburger-btn {
+  background: none;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 8px;
+  line-height: 1;
+  transition: color 0.2s, border-color 0.2s;
+}
+.hamburger-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.hamburger-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   Agent Sidebar
+   ═══════════════════════════════════════════════ */
+.agent-sidebar {
+  position: fixed;
+  top: 40px;
+  left: 0;
+  width: 220px;
+  height: calc(100% - 40px);
+  background: var(--surface);
+  border-right: 1px solid var(--bar-border);
+  z-index: 150;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+.agent-sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bar-border);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.sidebar-agent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-agent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bar-border);
+  transition: background 0.15s;
+}
+.sidebar-agent-item:hover {
+  background: var(--input-bg);
+}
+.sidebar-agent-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.agent-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sidebar-agent-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sidebar-agent-item.active .sidebar-agent-name {
+  color: #fff;
+}
+
+.sidebar-agent-role {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.sidebar-agent-item.active .sidebar-agent-role {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* ═══════════════════════════════════════════════
@@ -641,6 +739,9 @@ body {
   .logo { font-size: 12px; }
   #clock { display: none; }
 
+  /* Sidebar full-width on mobile */
+  .agent-sidebar { width: 100%; }
+
   /* Chat panel -> bottom sheet */
   .chat-panel {
     top: auto; right: 0; bottom: 0; left: 0;
@@ -688,7 +789,8 @@ body {
   .settings-modal,
   .toast,
   .theme-btn,
-  .settings-btn {
+  .settings-btn,
+  .agent-sidebar {
     transition: none;
   }
 }
