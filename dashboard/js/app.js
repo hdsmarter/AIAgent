@@ -14,7 +14,7 @@
   AuthGate.guard(function initApp() {
 
   // ── Core modules ─────────────────────────────
-  var office = new OfficeScene('office');
+  var office = new OfficeSceneV2('office-scene-v2');
   var fetcher = new StatusFetcher();
   var cc = new ChatClient();
   var notify = new Notifications();
@@ -275,12 +275,15 @@
     }
   });
 
-  // ── Status Fetcher → Dashboard + Sidebar ─────
+  // ── Status Fetcher → Dashboard + Settings + Sidebar ──
   function updateStatus(data) {
     if (!data) return;
 
-    // Update dashboard stat cards
+    // Update dashboard (agent count only)
     dashView.updateStatus(data);
+
+    // Update settings (gateway / telegram / line status)
+    settings.updateStatus(data);
 
     // Update nav sidebar footer
     var gwOk = false;

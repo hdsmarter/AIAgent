@@ -181,6 +181,7 @@ const PixelSprites = {
     { hair: '#2d1b69', skin: '#deb887', shirt: '#d4ac0d', pants: '#34495e' }, // 13 quality
     { hair: '#c0392b', skin: '#e8b88a', shirt: '#cb4335', pants: '#2c3e50' }, // 14 security
     { hair: '#6b3fa0', skin: '#f4c89e', shirt: '#7d3c98', pants: '#34495e' }, // 15 hr-director
+    { hair: '#2c3e50', skin: '#f4c89e', shirt: '#16a34a', pants: '#1e3a2f' }, // 16 pue-business
   ],
 
   // Speech bubbles — delegated to I18n

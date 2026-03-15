@@ -192,6 +192,18 @@ const I18n = {
     'role.14': { 'zh-TW': '\u5F31\u9EDE\u8A55\u4F30\u3001\u5408\u898F\u3001SIEM',   'zh-CN': '\u6F0F\u6D1E\u8BC4\u4F30\u3001\u5408\u89C4\u3001SIEM', en: 'Vuln Assessment, Compliance, SIEM' },
     'role.15': { 'zh-TW': '\u5718\u968A\u5EFA\u5236\u3001\u89D2\u8272\u898F\u5283',     'zh-CN': '\u56E2\u961F\u5EFA\u8BBE\u3001\u89D2\u8272\u89C4\u5212',   en: 'Team Building, Role Planning' },
 
+    // ── Agent #16 (PUE Business Assistant) ────
+    'agent.16': { 'zh-TW': 'PUE \u696D\u52D9\u52A9\u7406', 'zh-CN': 'PUE \u4E1A\u52A1\u52A9\u7406', en: 'PUE Business Asst.' },
+    'role.16':  { 'zh-TW': '\u5831\u50F9\u3001OE\u6BD4\u5C0D\u3001\u8A02\u55AE', 'zh-CN': '\u62A5\u4EF7\u3001OE\u6BD4\u5BF9\u3001\u8BA2\u5355', en: 'Quote, OE Match, Orders' },
+
+    // ── Office Room Labels ────────────────────
+    'office.lobby':      { 'zh-TW': '\u5927\u5EF3',     'zh-CN': '\u5927\u5385',     en: 'Lobby' },
+    'office.mainOffice': { 'zh-TW': '\u4E3B\u8FA6\u516C\u5340', 'zh-CN': '\u4E3B\u529E\u516C\u533A', en: 'Main Office' },
+    'office.meeting':    { 'zh-TW': '\u6703\u8B70\u5BA4',   'zh-CN': '\u4F1A\u8BAE\u5BA4',   en: 'Meeting Room' },
+    'office.security':   { 'zh-TW': '\u5B89\u63A7\u5BA4',   'zh-CN': '\u5B89\u63A7\u5BA4',   en: 'Security' },
+    'office.kitchen':    { 'zh-TW': '\u8336\u6C34\u9593',   'zh-CN': '\u8336\u6C34\u95F4',   en: 'Kitchen' },
+    'office.factory':    { 'zh-TW': '\u5DE5\u5EE0\u5340',   'zh-CN': '\u5DE5\u5382\u533A',   en: 'Factory' },
+
     // ── Speech Bubbles (30) ─────────────────────
     'speech.0':  { 'zh-TW': '\u5831\u544A\u5B8C\u6210\u4E86\uFF01',     'zh-CN': '\u62A5\u544A\u5B8C\u6210\u4E86\uFF01',     en: 'Report done!' },
     'speech.1':  { 'zh-TW': '\u6578\u64DA\u5206\u6790\u4E2D...',     'zh-CN': '\u6570\u636E\u5206\u6790\u4E2D...',     en: 'Analyzing data...' },
