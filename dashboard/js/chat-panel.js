@@ -240,7 +240,7 @@ class ChatPanel {
 
     this._fileInput = document.createElement('input');
     this._fileInput.type = 'file';
-    this._fileInput.accept = 'image/*,.pdf,.txt,.csv,.json,.doc,.docx,.xls,.xlsx';
+    this._fileInput.accept = 'image/*,.pdf,.txt,.csv,.json,.doc,.docx,.xls,.xlsx,.md,.log,.xml,.html,.css,.js,.ts,.py,.yaml,.yml,.ppt,.pptx';
     this._fileInput.style.display = 'none';
     this._fileInput.addEventListener('change', (e) => this._handleFileSelect(e));
 
@@ -871,24 +871,41 @@ class ChatPanel {
   }
 
   _processFile(file) {
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       this.addMessage('system', ChatPanel.UI_TEXT.fileTooLarge);
       return;
     }
-    this._pendingFile = { file: file, data: null };
+    this._pendingFile = { file: file, data: null, mimeType: file.type };
     if (file.type.startsWith('image/')) {
       this._compressImage(file, (dataUrl) => {
         this._pendingFile.data = dataUrl;
         this._showFilePreview(file.name, dataUrl);
       });
+    } else if (this._isTextFile(file)) {
+      // Text-based files: read as text
+      var reader = new FileReader();
+      reader.onload = (ev) => {
+        this._pendingFile.data = ev.target.result;
+        this._pendingFile.isText = true;
+        this._showFilePreview(file.name, null);
+      };
+      reader.readAsText(file);
     } else {
+      // Binary files (PDF, DOCX, XLSX): read as base64 data URL
       var reader = new FileReader();
       reader.onload = (ev) => {
         this._pendingFile.data = ev.target.result;
         this._showFilePreview(file.name, null);
       };
-      reader.readAsText(file);
+      reader.readAsDataURL(file);
     }
+  }
+
+  _isTextFile(file) {
+    var textTypes = ['text/', 'application/json', 'application/csv', 'text/csv'];
+    var textExts = ['.txt', '.csv', '.json', '.md', '.log', '.xml', '.html', '.css', '.js', '.ts', '.py', '.yaml', '.yml'];
+    if (textTypes.some(function(t) { return file.type.startsWith(t); })) return true;
+    return textExts.some(function(ext) { return file.name.toLowerCase().endsWith(ext); });
   }
 
   _compressImage(file, callback) {
@@ -1033,14 +1050,23 @@ class ChatPanel {
 
   _sendMessage() {
     var text = this._input.value.trim();
+    var fileAttachment = null;
+
     if (this._pendingFile && this._pendingFile.data) {
-      var fileInfo = '';
+      var fname = this._pendingFile.file.name;
       if (this._pendingFile.file.type.startsWith('image/')) {
-        fileInfo = '[Image: ' + this._pendingFile.file.name + ']';
+        // Image: pass as Vision API multimodal content
+        fileAttachment = { dataUrl: this._pendingFile.data, mimeType: this._pendingFile.mimeType, name: fname, isImage: true };
+        text = text || I18n.t('chat.imageUploaded') || '[Image: ' + fname + ']';
+      } else if (this._pendingFile.isText) {
+        // Text file: include content inline in text
+        var fileContent = this._pendingFile.data;
+        text = (text ? text + '\n\n' : '') + '[File: ' + fname + ']\n```\n' + fileContent + '\n```';
       } else {
-        fileInfo = '[File: ' + this._pendingFile.file.name + ']\n' + this._pendingFile.data;
+        // Binary file (PDF, DOCX etc.): pass as base64 data URL
+        fileAttachment = { dataUrl: this._pendingFile.data, mimeType: this._pendingFile.mimeType, name: fname, isImage: false };
+        text = text || '[File: ' + fname + ']';
       }
-      text = text ? text + '\n\n' + fileInfo : fileInfo;
       this._clearFile();
     }
     if (!text || !this.agent) {
@@ -1062,7 +1088,7 @@ class ChatPanel {
     this._updateCharCount();
 
     if (this.onSend) {
-      var sent = this.onSend(this.agent.id, text);
+      var sent = this.onSend(this.agent.id, text, fileAttachment);
       if (!sent) {
         var last = this._messageList.lastElementChild;
         if (last) last.classList.add('chat-msg-failed');

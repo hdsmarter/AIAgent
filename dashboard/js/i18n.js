@@ -33,12 +33,13 @@ const I18n = {
     'chat.upload':       { 'zh-TW': '\u4E0A\u50B3\u6A94\u6848',       'zh-CN': '\u4E0A\u4F20\u6587\u4EF6',       en: 'Upload file' },
     'chat.download':     { 'zh-TW': '\u4E0B\u8F09\u5C0D\u8A71',       'zh-CN': '\u4E0B\u8F7D\u5BF9\u8BDD',       en: 'Download' },
     'chat.retry':        { 'zh-TW': '\u91CD\u8A66',           'zh-CN': '\u91CD\u8BD5',            en: 'Retry' },
-    'chat.fileTooLarge': { 'zh-TW': '\u6A94\u6848\u8D85\u904E 5MB \u9650\u5236', 'zh-CN': '\u6587\u4EF6\u8D85\u8FC7 5MB \u9650\u5236', en: 'File exceeds 5MB limit' },
+    'chat.fileTooLarge': { 'zh-TW': '\u6A94\u6848\u8D85\u904E 10MB \u9650\u5236', 'zh-CN': '\u6587\u4EF6\u8D85\u8FC7 10MB \u9650\u5236', en: 'File exceeds 10MB limit' },
     'chat.emptyMsg':     { 'zh-TW': '\u8ACB\u8F38\u5165\u8A0A\u606F',       'zh-CN': '\u8BF7\u8F93\u5165\u6D88\u606F',       en: 'Please enter a message' },
     'chat.downloadFmt':  { 'zh-TW': '\u532F\u51FA\u683C\u5F0F',       'zh-CN': '\u5BFC\u51FA\u683C\u5F0F',       en: 'Export format' },
     'chat.charCount':    { 'zh-TW': '\u5B57\u5143',           'zh-CN': '\u5B57\u7B26',            en: 'characters' },
     'chat.sending':      { 'zh-TW': '\u767C\u9001\u4E2D\u2026',       'zh-CN': '\u53D1\u9001\u4E2D\u2026',       en: 'Sending\u2026' },
     'chat.shiftEnter':   { 'zh-TW': 'Shift+Enter \u63DB\u884C', 'zh-CN': 'Shift+Enter \u6362\u884C', en: 'Shift+Enter for newline' },
+    'chat.imageUploaded': { 'zh-TW': '\u8ACB\u5206\u6790\u9019\u5F35\u5716\u7247', 'zh-CN': '\u8BF7\u5206\u6790\u8FD9\u5F20\u56FE\u7247', en: 'Please analyze this image' },
 
     // ── Settings Panel ──────────────────────────
     'settings.title':          { 'zh-TW': '\u8A2D\u5B9A',           'zh-CN': '\u8BBE\u7F6E',           en: 'Settings' },

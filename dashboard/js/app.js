@@ -177,8 +177,8 @@
   };
 
   // ── Wiring: ChatPanel → ChatClient ───────────
-  chat.onSend = function(agentId, text) {
-    return cc.sendChat(agentId, text);
+  chat.onSend = function(agentId, text, fileAttachment) {
+    return cc.sendChat(agentId, text, fileAttachment);
   };
 
   // ── Wiring: ChatClient events ────────────────

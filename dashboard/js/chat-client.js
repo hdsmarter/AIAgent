@@ -159,17 +159,35 @@ class ChatClient extends EventTarget {
 
   // ── Send message (unified) ────────────────────
 
-  sendChat(agentId, text) {
+  sendChat(agentId, text, fileAttachment) {
     if (this.mode === 'telegram') {
       return this._sendTelegram(agentId, text);
     }
     if (this.mode === 'openrouter') {
-      return this._sendOpenRouter(agentId, text);
+      return this._sendOpenRouter(agentId, text, fileAttachment);
     }
     if (this.mode === 'gateway-api') {
-      return this._sendGatewayApi(agentId, text);
+      return this._sendGatewayApi(agentId, text, fileAttachment);
     }
     return this._sendGateway(agentId, text);
+  }
+
+  /**
+   * Build user message content for OpenAI-compatible API.
+   * fileAttachment: { dataUrl, mimeType, name, isImage }
+   * - Images → image_url content part (Vision API)
+   * - Binary files (PDF etc.) → image_url with document MIME (supported by Gemini/Claude)
+   * - No attachment → plain text string
+   */
+  _buildUserContent(text, fileAttachment) {
+    if (!fileAttachment) return text;
+    var content = [{ type: 'text', text: text }];
+    // Both images and binary files use the same data URL format
+    content.push({
+      type: 'image_url',
+      image_url: { url: fileAttachment.dataUrl },
+    });
+    return content;
   }
 
   // ── Test connection ───────────────────────────
@@ -215,7 +233,7 @@ class ChatClient extends EventTarget {
       .catch(() => this._setState('disconnected'));
   }
 
-  _sendOpenRouter(agentId, text) {
+  _sendOpenRouter(agentId, text, fileAttachment) {
     if (this.state !== 'connected' || !this.orApiKey) return false;
 
     // Initialize history for this agent
@@ -224,8 +242,9 @@ class ChatClient extends EventTarget {
     }
     const history = this._orHistory[agentId];
 
-    // Add user message to history
-    history.push({ role: 'user', content: text });
+    // Add user message to history (multimodal if file attached)
+    const userContent = this._buildUserContent(text, fileAttachment);
+    history.push({ role: 'user', content: userContent });
 
     // Cap history length
     while (history.length > ChatClient.DEFAULTS.orMaxHistory) {
@@ -382,14 +401,16 @@ class ChatClient extends EventTarget {
       .catch(() => this._setState('disconnected'));
   }
 
-  _sendGatewayApi(agentId, text) {
+  _sendGatewayApi(agentId, text, fileAttachment) {
     if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
 
     if (!this._gwApiHistory[agentId]) {
       this._gwApiHistory[agentId] = [];
     }
     const history = this._gwApiHistory[agentId];
-    history.push({ role: 'user', content: text });
+    // Multimodal if file attached
+    const userContent = this._buildUserContent(text, fileAttachment);
+    history.push({ role: 'user', content: userContent });
     while (history.length > ChatClient.DEFAULTS.orMaxHistory) {
       history.shift();
     }
