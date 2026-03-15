@@ -26,6 +26,46 @@ var SvgIcons = {
   download: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v7.6l2.3-2.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L9 11.6V4a1 1 0 011-1zM4 15a1 1 0 011 1v1h10v-1a1 1 0 012 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z"/></svg>',
   clip:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M15.6 3.4a3 3 0 00-4.2 0L5.5 9.3a4.5 4.5 0 006.4 6.4l5.8-5.9a1 1 0 011.4 1.4l-5.8 5.9a6.5 6.5 0 01-9.2-9.2l5.9-5.9a5 5 0 017 7L11.2 15a3 3 0 01-4.2-4.2l5.5-5.5a1 1 0 011.4 1.4l-5.5 5.5a1 1 0 001.4 1.4L15.6 7.6a3 3 0 000-4.2z"/></svg>',
   copy:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 2a2 2 0 00-2 2v1H4a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-1h1a2 2 0 002-2V4a2 2 0 00-2-2H7zm0 2h8v9h-1V7a2 2 0 00-2-2H7V4zM4 7h8v9H4V7z"/></svg>',
+
+  // ── Per-agent unique icons (16 roles) ──────
+  agentChart:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1v-1h-4V9h-3v7H8V6H5v10H3V4h14V3H3zm12 7v5h2v-5h-2zM6 7v9h1V7H6z"/></svg>',
+  agentMegaphone: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M15 3a1 1 0 011 1v12a1 1 0 01-1.6.8L10 13H5a2 2 0 01-2-2V9a2 2 0 012-2h5l4.4-3.8A1 1 0 0115 3zm-2 3.5L10.4 9H5v2h5.4L13 13.5V6.5zM8 14v2a1 1 0 001 1h1a1 1 0 001-1v-1.5l-1-.5H8z"/></svg>',
+  agentCoin:      '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 2a6 6 0 110 12 6 6 0 010-12zm-.5 2v1.1A2.5 2.5 0 007 9.5a1 1 0 002 0 .5.5 0 01.5-.5h1a.5.5 0 010 1H9a2.5 2.5 0 000 5h.5V16h1v-1.1a2.5 2.5 0 002.5-2.4 1 1 0 00-2 0 .5.5 0 01-.5.5H9.5a.5.5 0 010-1H11a2.5 2.5 0 000-5h-.5V6h-1z"/></svg>',
+  agentPeople:    '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 5a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 0a2.5 2.5 0 110 5 2.5 2.5 0 010-5zM3 15c0-2.2 1.8-4 4-4 1.2 0 2.3.5 3 1.4.7-.9 1.8-1.4 3-1.4 2.2 0 4 1.8 4 4v1H3v-1z"/></svg>',
+  agentTruck:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a1 1 0 011-1h8a1 1 0 011 1v7h2V9a1 1 0 011-1h2l2 3v4h-1a2 2 0 01-4 0H7a2 2 0 01-4 0H2V5zm3 10a1 1 0 100 2 1 1 0 000-2zm11 0a1 1 0 100 2 1 1 0 000-2zM14 10v2h3l-1.3-2H14z"/></svg>',
+  agentLock:      '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1V9a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 4a2 2 0 114 0v2H8V6zm2 6a1.5 1.5 0 011 2.6V16h-2v-1.4A1.5 1.5 0 0110 12z"/></svg>',
+  agentClipboard: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a1 1 0 00-1 1H5a1 1 0 00-1 1v13a1 1 0 001 1h10a1 1 0 001-1V4a1 1 0 00-1-1h-2a1 1 0 00-1-1H8zm0 2h4v1H8V4zM7 8h6a1 1 0 010 2H7a1 1 0 010-2zm0 4h4a1 1 0 010 2H7a1 1 0 010-2z"/></svg>',
+  agentHeadset:   '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a7 7 0 00-7 7v4a3 3 0 003 3h1v-6H5v-1a5 5 0 0110 0v1h-2v6h1.5l-.5 1H9a1 1 0 000 2h4a3 3 0 003-3V9a7 7 0 00-7-7zM5 11v3h1v-3H5zm9 0v3h1v-3h-1z"/></svg>',
+  agentScale:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1h4l2 6h-1a3 3 0 01-6 0h-1V4.7l-4.3 2L7 12H6a3 3 0 01-6 0H0L2 6h4l3.3-1.5A1 1 0 0110 3V2zM3 7L1.8 10h2.4L3 7zm10 0l-1.2 3h2.4L13 7z"/></svg>',
+  agentBulb:      '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a5 5 0 00-3 9v2a1 1 0 001 1h4a1 1 0 001-1v-2a5 5 0 00-3-9zm0 2a3 3 0 012.2 5.1l-.7.6V12H8.5V9.7l-.7-.6A3 3 0 0110 4zM8 15h4v1a2 2 0 01-4 0v-1z"/></svg>',
+  agentCursor:    '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 2l11 8h-5l3 6-2 1-3-6-4 3V2zm2 3.5v5.8l2.2-1.6h3.6L6 5.5z"/></svg>',
+  agentPen:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M14.7 3.3a2.4 2.4 0 013.4 3.4L8 16.8 3 18l1.2-5L14.7 3.3zM13 6l1.4-1.4 1 1L14 7l-1-1zM5.8 13.2l6-6 1 1-6 6-.5.5L5 15l.3-1.3.5-.5z"/></svg>',
+  agentBriefcase: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 4V3a1 1 0 011-1h4a1 1 0 011 1v1h4a1 1 0 011 1v4h-3v-1a1 1 0 00-2 0v1H7V8a1 1 0 00-2 0v1H2V5a1 1 0 011-1h4zm1 0h4V3H8v1zM2 11h3v1a1 1 0 002 0v-1h6v1a1 1 0 002 0v-1h3v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5z"/></svg>',
+  agentBug:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a3 3 0 00-3 3H5a1 1 0 000 2h1.1A5 5 0 006 8H3a1 1 0 000 2h3v1H3a1 1 0 000 2h3c.2 1.1.7 2 1.3 2.7L5 17.3a1 1 0 001.4 1.4L8.5 16a4 4 0 003 0l2.1 2.7a1 1 0 001.4-1.4l-2.3-1.6c.6-.7 1.1-1.6 1.3-2.7h3a1 1 0 000-2h-3v-1h3a1 1 0 000-2h-3a5 5 0 00-.1-1H15a1 1 0 000-2h-2a3 3 0 00-3-3zm0 2a1 1 0 011 1H9a1 1 0 011-1zm-2 4h4a3 3 0 010 6H8a3 3 0 010-6z"/></svg>',
+  agentEye:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4C5 4 1.7 8.3 1 10c.7 1.7 4 6 9 6s8.3-4.3 9-6c-.7-1.7-4-6-9-6zm0 2a4 4 0 110 8 4 4 0 010-8zm0 2a2 2 0 100 4 2 2 0 000-4z"/></svg>',
+  agentCrown:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 14l2-8 3 4 3-6 3 6 3-4 2 8H2zm1.5 1h13a1 1 0 010 2h-13a1 1 0 010-2z"/></svg>',
+};
+
+/**
+ * Maps agent ID → SvgIcons key for per-agent unique icons
+ */
+var AgentIconMap = {
+  0: 'agentChart',      // 數據分析師
+  1: 'agentMegaphone',  // 行銷策略師
+  2: 'agentCoin',       // 財務顧問
+  3: 'agentPeople',     // 人力資源專員
+  4: 'agentTruck',      // 供應鏈管理師
+  5: 'agentLock',       // 資訊安全專家
+  6: 'agentClipboard',  // 專案經理
+  7: 'agentHeadset',    // 客服主管
+  8: 'agentScale',      // 法務顧問
+  9: 'agentBulb',       // 產品設計師
+  10: 'agentCursor',    // UX 研究員
+  11: 'agentPen',       // 內容策略師
+  12: 'agentBriefcase', // 業務開發經理
+  13: 'agentBug',       // 品質保證工程師
+  14: 'agentEye',       // 資安分析師
+  15: 'agentCrown',     // 人資總監
 };
 
 /**

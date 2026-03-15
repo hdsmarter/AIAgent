@@ -133,7 +133,8 @@ class ChatPanel {
     this._headerAvatar = document.createElement('div');
     this._headerAvatar.className = 'chat-header-avatar';
     this._headerAvatar.style.background = 'var(--accent)';
-    this._headerAvatar.appendChild(svgFromTemplate(SvgIcons.robot));
+    this._headerAvatarIcon = svgFromTemplate(SvgIcons.robot);
+    this._headerAvatar.appendChild(this._headerAvatarIcon);
     this._headerLeft.appendChild(this._headerAvatar);
 
     var headerInfo = document.createElement('div');
@@ -334,6 +335,11 @@ class ChatPanel {
     this._container.appendChild(split);
   }
 
+  _agentIcon(agentId) {
+    var iconKey = AgentIconMap[agentId] || 'robot';
+    return svgFromTemplate(SvgIcons[iconKey]);
+  }
+
   _createAgentListItem(agent) {
     var palette = PixelSprites.agentPalettes[agent.id];
     var bgColor = palette ? palette.shirt : '#004896';
@@ -344,11 +350,11 @@ class ChatPanel {
     li.setAttribute('aria-selected', 'false');
     li.dataset.agentId = agent.id;
 
-    // Avatar
+    // Avatar with unique per-agent icon
     var avatar = document.createElement('div');
     avatar.className = 'chat-agent-avatar';
     avatar.style.background = bgColor;
-    avatar.appendChild(svgFromTemplate(SvgIcons.robot));
+    avatar.appendChild(this._agentIcon(agent.id));
     li.appendChild(avatar);
 
     // Info
@@ -462,9 +468,14 @@ class ChatPanel {
     // Hide empty state
     if (this._emptyState) this._emptyState.style.display = 'none';
 
-    // Update header
+    // Update header avatar with per-agent icon
     var palette = PixelSprites.agentPalettes[agent.id];
-    if (this._headerAvatar) this._headerAvatar.style.background = palette ? palette.shirt : 'var(--accent)';
+    if (this._headerAvatar) {
+      this._headerAvatar.style.background = palette ? palette.shirt : 'var(--accent)';
+      if (this._headerAvatarIcon) this._headerAvatarIcon.remove();
+      this._headerAvatarIcon = this._agentIcon(agent.id);
+      this._headerAvatar.appendChild(this._headerAvatarIcon);
+    }
 
     // Update name (keep status dot)
     if (this._titleEl) {
@@ -551,13 +562,13 @@ class ChatPanel {
     msgEl.className = 'chat-msg chat-msg-' + role;
     if (msg.failed) msgEl.classList.add('chat-msg-failed');
 
-    // Avatar for agent messages
+    // Avatar for agent messages (unique per-agent icon)
     if (role === 'agent' && this.agent) {
       var avatarEl = document.createElement('div');
       avatarEl.className = 'chat-msg-avatar';
       var palette = PixelSprites.agentPalettes[this.agent.id];
       avatarEl.style.background = palette ? palette.shirt : 'var(--accent)';
-      avatarEl.appendChild(svgFromTemplate(SvgIcons.robot));
+      avatarEl.appendChild(this._agentIcon(this.agent.id));
       msgEl.appendChild(avatarEl);
     }
 
@@ -640,13 +651,13 @@ class ChatPanel {
     msgEl.className = 'chat-msg chat-msg-agent';
     msgEl.setAttribute('data-streaming', 'true');
 
-    // Avatar
+    // Avatar (unique per-agent icon)
     if (this.agent) {
       var avatarEl = document.createElement('div');
       avatarEl.className = 'chat-msg-avatar';
       var palette = PixelSprites.agentPalettes[this.agent.id];
       avatarEl.style.background = palette ? palette.shirt : 'var(--accent)';
-      avatarEl.appendChild(svgFromTemplate(SvgIcons.robot));
+      avatarEl.appendChild(this._agentIcon(this.agent.id));
       msgEl.appendChild(avatarEl);
     }
 
@@ -771,13 +782,13 @@ class ChatPanel {
     var msgEl = document.createElement('div');
     msgEl.className = 'chat-msg chat-msg-' + msg.role;
 
-    // Avatar for agent messages
+    // Avatar for agent messages (unique per-agent icon)
     if (msg.role === 'agent' && this.agent) {
       var avatarEl = document.createElement('div');
       avatarEl.className = 'chat-msg-avatar';
       var palette = PixelSprites.agentPalettes[this.agent.id];
       avatarEl.style.background = palette ? palette.shirt : 'var(--accent)';
-      avatarEl.appendChild(svgFromTemplate(SvgIcons.robot));
+      avatarEl.appendChild(this._agentIcon(this.agent.id));
       msgEl.appendChild(avatarEl);
     }
 

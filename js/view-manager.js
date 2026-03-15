@@ -210,7 +210,8 @@ class ViewManager {
     var iconEl = document.createElement('div');
     iconEl.className = 'agent-card-icon';
     iconEl.style.background = 'rgba(255,255,255,0.2)';
-    iconEl.appendChild(svgFromTemplate(SvgIcons.robot));
+    var cardIconKey = AgentIconMap[agent.id] || 'robot';
+    iconEl.appendChild(svgFromTemplate(SvgIcons[cardIconKey]));
     header.appendChild(iconEl);
 
     var headerName = document.createElement('span');
