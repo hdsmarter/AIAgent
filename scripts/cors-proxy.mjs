@@ -15,9 +15,12 @@
  * Ref: https://github.com/http-party/node-http-proxy/issues/921
  */
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const GATEWAY = 'http://127.0.0.1:18789';
 const PORT = parseInt(process.env.PORT || '18790', 10);
+const UPLOAD_DIR = '/tmp/dashboard-uploads';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -38,6 +41,33 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS);
     res.end();
+    return;
+  }
+
+  // ── File upload endpoint (save to local temp dir for agent) ──
+  if (req.method === 'POST' && req.url === '/upload') {
+    let bodyChunks = [];
+    req.on('data', (chunk) => bodyChunks.push(chunk));
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(bodyChunks).toString());
+        const filename = (body.filename || 'upload').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const timestamp = Date.now();
+        const safeName = `${timestamp}_${filename}`;
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        const filePath = path.join(UPLOAD_DIR, safeName);
+
+        // Decode data URL → binary
+        const base64 = body.dataUrl.split(',')[1] || body.dataUrl;
+        fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+
+        res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, path: filePath, filename: safeName }));
+      } catch (err) {
+        res.writeHead(400, { ...CORS, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
     return;
   }
 

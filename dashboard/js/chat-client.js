@@ -405,129 +405,27 @@ class ChatClient extends EventTarget {
   _sendGatewayApi(agentId, text, fileAttachment) {
     if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
 
-    // Route file attachments through Responses API (Agent pipeline with tool calling)
+    // ALL gateway-api messages route through /v1/responses (Agent pipeline).
+    // This enables: workspace knowledge (PUE-ASSIST.md), tool calling, skill triggering.
+    // /v1/chat/completions is kept only for testConnection().
+
+    // Build input: file attachment → save locally first, then reference path in text
+    let inputText = text;
     if (fileAttachment) {
-      return this._sendGatewayResponses(agentId, text, fileAttachment);
+      // Save file to local temp dir via CORS proxy /upload endpoint
+      return this._uploadThenSendResponses(agentId, text, fileAttachment);
     }
 
-    if (!this._gwApiHistory[agentId]) {
-      this._gwApiHistory[agentId] = [];
-    }
-    const history = this._gwApiHistory[agentId];
-    // Multimodal if file attached
-    const userContent = this._buildUserContent(text, fileAttachment);
-    history.push({ role: 'user', content: userContent });
-    while (history.length > ChatClient.DEFAULTS.orMaxHistory) {
-      history.shift();
-    }
-
-    const systemPrompt = ChatClient.AGENT_SYSTEM_PROMPTS[agentId] || ChatClient.AGENT_SYSTEM_PROMPTS[0];
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...history,
-    ];
-
-    if (this._gwApiAbort[agentId]) {
-      this._gwApiAbort[agentId].abort();
-    }
-    const controller = new AbortController();
-    this._gwApiAbort[agentId] = controller;
-
-    this.dispatchEvent(new CustomEvent('message', {
-      detail: { type: 'typing', agentId }
-    }));
-
-    fetch(this.gwApiUrl + '/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + this.gwApiToken,
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify({
-        model: this.gwApiModel,
-        messages,
-        stream: true,
-      }),
-      signal: controller.signal,
-    })
-      .then(response => {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return this._readSSEStream(response.body, agentId, this._gwApiHistory);
-      })
-      .catch(err => {
-        if (err.name === 'AbortError') return;
-        this.dispatchEvent(new CustomEvent('message', {
-          detail: {
-            type: 'response',
-            agentId,
-            text: I18n.t('chat.sendFail') + ': ' + err.message,
-            final: true,
-          }
-        }));
-      })
-      .finally(() => {
-        delete this._gwApiAbort[agentId];
-      });
-
-    return true;
+    // Pure text → send directly via /v1/responses
+    return this._sendResponses(agentId, inputText);
   }
 
-  _testGatewayApi(opts) {
-    const url = (opts && opts.gwApiUrl) || this.gwApiUrl;
-    const token = (opts && opts.gwApiToken) || this.gwApiToken;
-    if (!url || !token) return Promise.resolve(false);
-
-    return fetch(url + '/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify({
-        model: (opts && opts.gwApiModel) || this.gwApiModel,
-        messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 1,
-      }),
-    })
-      .then(r => r.ok)
-      .catch(() => false);
-  }
-
-  // ── Gateway Responses API (OpenClaw /v1/responses — Agent pipeline) ──
-
-  _sendGatewayResponses(agentId, text, fileAttachment) {
-    if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
-
-    // Build input array (OpenResponses format)
-    const input = [];
-
-    if (fileAttachment && !fileAttachment.isImage) {
-      // PDF/binary → input_file
-      const base64 = fileAttachment.dataUrl.split(',')[1];
-      input.push({
-        type: 'input_file',
-        filename: fileAttachment.name,
-        file_data: base64,
-      });
-    } else if (fileAttachment && fileAttachment.isImage) {
-      // Image → input_image
-      input.push({
-        type: 'input_image',
-        image_url: fileAttachment.dataUrl,
-      });
-    }
-
-    // Text message
-    input.push({
-      type: 'input_text',
-      text: text,
-    });
-
-    const systemPrompt = ChatClient.AGENT_SYSTEM_PROMPTS[agentId] || ChatClient.AGENT_SYSTEM_PROMPTS[0];
-
-    // Abort previous stream
+  /**
+   * Core method: send message via /v1/responses (OpenClaw Agent pipeline).
+   * Uses string or message-array input format. No instructions override —
+   * Agent uses workspace config (PUE-ASSIST.md, SOUL.md, etc.)
+   */
+  _sendResponses(agentId, text) {
     if (this._gwApiAbort[agentId]) {
       this._gwApiAbort[agentId].abort();
     }
@@ -547,8 +445,8 @@ class ChatClient extends EventTarget {
       },
       body: JSON.stringify({
         model: this.gwApiModel,
-        instructions: systemPrompt,
-        input: input,
+        input: [{ type: 'message', role: 'user', content: text }],
+        user: 'dashboard-admin',
         stream: true,
       }),
       signal: controller.signal,
@@ -574,6 +472,75 @@ class ChatClient extends EventTarget {
 
     return true;
   }
+
+  /**
+   * Upload file to CORS proxy /upload, then send message with file path.
+   * The OpenClaw agent can read local files and run scripts on them.
+   */
+  _uploadThenSendResponses(agentId, text, fileAttachment) {
+    this.dispatchEvent(new CustomEvent('message', {
+      detail: { type: 'typing', agentId }
+    }));
+
+    // POST file to CORS proxy /upload
+    fetch(this.gwApiUrl + '/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({
+        filename: fileAttachment.name,
+        dataUrl: fileAttachment.dataUrl,
+      }),
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Upload HTTP ' + r.status);
+        return r.json();
+      })
+      .then(result => {
+        // Build message with file path for agent
+        const fileRef = '\n\n[Uploaded file: ' + result.path + ' (' + fileAttachment.name + ')]';
+        return this._sendResponses(agentId, text + fileRef);
+      })
+      .catch(err => {
+        this.dispatchEvent(new CustomEvent('message', {
+          detail: {
+            type: 'response',
+            agentId,
+            text: I18n.t('chat.sendFail') + ': ' + err.message,
+            final: true,
+          }
+        }));
+      });
+
+    return true;
+  }
+
+  _testGatewayApi(opts) {
+    const url = (opts && opts.gwApiUrl) || this.gwApiUrl;
+    const token = (opts && opts.gwApiToken) || this.gwApiToken;
+    if (!url || !token) return Promise.resolve(false);
+
+    // Use /v1/responses with minimal input for connection test (Agent pipeline)
+    return fetch(url + '/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({
+        model: (opts && opts.gwApiModel) || this.gwApiModel,
+        input: 'test',
+        max_output_tokens: 1,
+      }),
+    })
+      .then(r => r.ok)
+      .catch(() => false);
+  }
+
+  // ── OpenResponses SSE stream reader ──────────
 
   /**
    * Read SSE stream from /v1/responses endpoint.

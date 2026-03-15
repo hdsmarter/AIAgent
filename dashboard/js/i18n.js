@@ -203,6 +203,8 @@ const I18n = {
     'office.security':   { 'zh-TW': '\u5B89\u63A7\u5BA4',   'zh-CN': '\u5B89\u63A7\u5BA4',   en: 'Security' },
     'office.kitchen':    { 'zh-TW': '\u8336\u6C34\u9593',   'zh-CN': '\u8336\u6C34\u95F4',   en: 'Kitchen' },
     'office.factory':    { 'zh-TW': '\u5DE5\u5EE0\u5340',   'zh-CN': '\u5DE5\u5382\u533A',   en: 'Factory' },
+    'office.responding': { 'zh-TW': '\u4F4D\u52A9\u7406\u56DE\u61C9\u4E2D', 'zh-CN': '\u4F4D\u52A9\u7406\u56DE\u5E94\u4E2D', en: ' responding' },
+    'office.idle':       { 'zh-TW': '\u4F4D\u5F85\u547D',           'zh-CN': '\u4F4D\u5F85\u547D',           en: ' idle' },
 
     // ── Speech Bubbles (30) ─────────────────────
     'speech.0':  { 'zh-TW': '\u5831\u544A\u5B8C\u6210\u4E86\uFF01',     'zh-CN': '\u62A5\u544A\u5B8C\u6210\u4E86\uFF01',     en: 'Report done!' },
