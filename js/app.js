@@ -92,7 +92,7 @@
 
   viewMgr.registerView('office', {
     containerEl: document.getElementById('view-office'),
-    breadcrumb: I18n.t('nav.office'),
+    breadcrumb: I18n.t('nav.office'),  // 情境儀表板
     onShow: function() {
       office.resize();
     },

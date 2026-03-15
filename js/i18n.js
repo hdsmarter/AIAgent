@@ -99,7 +99,7 @@ const I18n = {
     'nav.aiAssistant':     { 'zh-TW': 'AI \u52A9\u7406',     'zh-CN': 'AI \u52A9\u7406',     en: 'AI Assistant' },
     'nav.agentOverview':   { 'zh-TW': '\u52A9\u7406\u7E3D\u89BD',     'zh-CN': '\u52A9\u7406\u603B\u89C8',     en: 'Agent Overview' },
     'nav.conversation':    { 'zh-TW': '\u5C0D\u8A71',         'zh-CN': '\u5BF9\u8BDD',         en: 'Conversation' },
-    'nav.office':          { 'zh-TW': '\u8FA6\u516C\u5BA4\u5834\u666F',   'zh-CN': '\u529E\u516C\u5BA4\u573A\u666F',   en: 'Office Scene' },
+    'nav.office':          { 'zh-TW': '\u60C5\u5883\u5100\u8868\u677F',   'zh-CN': '\u60C5\u5883\u4EEA\u8868\u677F',   en: 'Situational Dashboard' },
     'nav.settings':        { 'zh-TW': '\u8A2D\u5B9A',         'zh-CN': '\u8BBE\u7F6E',         en: 'Settings' },
     'nav.connection':      { 'zh-TW': '\u9023\u7DDA\u8A2D\u5B9A',     'zh-CN': '\u8FDE\u7EBF\u8BBE\u7F6E',     en: 'Connection' },
     'nav.language':        { 'zh-TW': '\u8A9E\u8A00',         'zh-CN': '\u8BED\u8A00',         en: 'Language' },

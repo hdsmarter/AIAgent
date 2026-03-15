@@ -597,13 +597,15 @@ class OfficeScene {
     // Guard: skip resize during sidebar animation (0-size container)
     if (W < 100 || H < 100) return;
 
-    const officeW = this.cols * this.T;
-    const officeH = this.rows * this.T;
+    // Add 1-tile padding around edges so agents near borders are fully visible
+    const PAD = this.T;
+    const officeW = this.cols * this.T + PAD * 2;
+    const officeH = this.rows * this.T + PAD * 2;
 
-    // Fill width, fit height — no horizontal gaps
+    // Fit mode: ensure entire grid + padding visible (no clipping)
     const scaleW = W / officeW;
     const scaleH = H / officeH;
-    const baseScale = scaleW;  // always fill width
+    const baseScale = Math.min(scaleW, scaleH);
 
     this.canvas.width = W * dpr;
     this.canvas.height = H * dpr;
@@ -611,11 +613,9 @@ class OfficeScene {
     this.canvas.style.height = H + 'px';
 
     this.scale = baseScale * dpr;
-    // Center horizontally (should be ~0 since we fill width)
-    this.offsetX = (W * dpr - officeW * this.scale) / 2;
-    // If grid is shorter than canvas, center vertically; otherwise top-align
-    const renderedH = officeH * this.scale;
-    this.offsetY = renderedH < H * dpr ? (H * dpr - renderedH) / 2 : 0;
+    // Center both axes — grid always fully visible
+    this.offsetX = (W * dpr - officeW * this.scale) / 2 + PAD * this.scale;
+    this.offsetY = (H * dpr - officeH * this.scale) / 2 + PAD * this.scale;
   }
 
   onMouseMove(e) {
