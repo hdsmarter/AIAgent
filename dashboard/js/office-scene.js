@@ -51,8 +51,22 @@ class OfficeScene {
     // Build tile cache after layout
     this._rebuildTileCache();
 
-    // Resize handler
+    // Resize handler — prefer ResizeObserver for smooth sidebar transitions
     this.resize();
+    this._resizePending = false;
+    const container = this.canvas.parentElement;
+    if (window.ResizeObserver && container) {
+      this._resizeObserver = new ResizeObserver(() => {
+        if (!this._resizePending) {
+          this._resizePending = true;
+          requestAnimationFrame(() => {
+            this._resizePending = false;
+            this.resize();
+          });
+        }
+      });
+      this._resizeObserver.observe(container);
+    }
     window.addEventListener('resize', () => this.resize());
 
     // Mouse tracking for agent hover

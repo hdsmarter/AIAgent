@@ -2205,6 +2205,9 @@ body {
   .view-container {
     padding: 16px;
   }
+  .view-office-container {
+    padding: 0;
+  }
 
   /* Chat: stack vertically on mobile */
   .chat-split {
