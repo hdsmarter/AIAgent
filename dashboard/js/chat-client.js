@@ -446,7 +446,7 @@ class ChatClient extends EventTarget {
       body: JSON.stringify({
         model: this.gwApiModel,
         input: [{ type: 'message', role: 'user', content: text }],
-        user: 'dashboard-v2',
+        user: 'dashboard-v3',
         stream: true,
       }),
       signal: controller.signal,

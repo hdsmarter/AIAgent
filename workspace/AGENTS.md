@@ -25,20 +25,38 @@
 - 發現重要的業務決策或偏好
 - 對話結束時的摘要
 
-## 技能觸發規則（Skill Routing）
+## ⚠️ PUE 技能觸發規則（強制）
 
-以下查詢**必須讀取並遵循對應的技能 SKILL.md**，不要自己回答：
+### 觸發條件
+當使用者訊息包含以下任一關鍵字時，**你必須立即執行下方的指令**：
+價格、歷史價格、進貨價、售價、查價、報價、OE號、UXC、SMP、A05、Beck、零件號、part number、比對、PO、訂單、PUE、與日
 
-| 觸發關鍵字 | 技能 | 說明 |
-|------------|------|------|
-| 價格、歷史價格、進貨價、售價、查價、報價、OE號、UXC、SMP、A05、Beck、零件號、part number、比對、PO、訂單、PUE、與日 | `pue-order` | PUE 業務助理 — 查價、比對、報價 |
+### 強制執行步驟（不可跳過）
 
-**規則**：
-- 偵測到上述關鍵字時，先 `read` 該技能的 SKILL.md，再按指示執行
-- **不要自己用 pandas 讀 xlsx** — 技能腳本有完整的 4 層搜尋邏輯
-- **不要說「找不到」就放棄** — 腳本支援 prefix matching 和模糊比對
-- UXC 碼是跨供應商標準編號，存在 `saled.standard` 欄位
-- 業務知識參考：`workspace/PUE-ASSIST.md`（需主動 read）
+**Step 1**: 讀取技能文件
+```
+read ~/.openclaw/skills/pue-order/SKILL.md
+```
+
+**Step 2**: 執行快速查價腳本
+```bash
+python3 ~/.openclaw/skills/pue-order/scripts/match_catalog.py \
+  --lookup "用戶提供的零件號碼" \
+  --customer 用戶提供的客戶代碼 \
+  --data /Users/tonyjiang/Documents/SmarterERP/PUE/SHEET
+```
+
+**Step 3**: 將 JSON 結果整理成表格回覆用戶
+
+### 🚫 絕對禁止
+- ❌ 不要自己寫 Python/pandas 讀取 xlsx
+- ❌ 不要說「找不到記錄」然後放棄
+- ❌ 不要跳過 Step 2 的腳本執行
+- ❌ 不要建議用戶「核對編號」而不先跑腳本
+
+### 為什麼必須用腳本
+腳本有 4 層搜尋（itno → itname → alternate → **saled.standard**），
+你自己搜尋只會查 3 層，會漏掉 `saled.standard` 欄位（UXC 碼在這裡）。
 
 ## 安全紅線 🔴
 
