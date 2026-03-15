@@ -3,64 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚡ HD 智動化 — AI Agent Dashboard</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <title>HD 智動化 — AI Agent SaaS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23004896'/><path d='M18 4l-8 14h6l-2 10 8-14h-6z' fill='%23f4a026'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Status Bar -->
-  <header class="status-bar" role="banner">
-    <div class="status-left">
-      <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">☰</button>
-      <span class="logo">⚡ HD 智動化</span>
-      <span class="status-pill" id="gw-pill">Gateway: --</span>
-      <span class="status-pill" id="tg-pill">Telegram: --</span>
-      <span class="status-pill" id="line-pill">LINE: --</span>
+  <!-- Top Navbar (56px) -->
+  <header class="top-navbar" id="top-navbar" role="banner">
+    <div class="navbar-left">
+      <button class="navbar-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="16" height="2" rx="1"/></svg>
+      </button>
+      <a class="navbar-logo" href="#/dashboard">
+        <svg class="navbar-logo-icon" width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="var(--brand-primary)"/>
+          <path d="M18 4l-8 14h6l-2 10 8-14h-6z" fill="var(--brand-secondary)"/>
+        </svg>
+        <span class="navbar-logo-text">HD 智動化</span>
+      </a>
     </div>
-    <div class="status-right">
-      <span id="agent-count" aria-live="polite">0 Agents</span>
-      <span id="clock" aria-label="Clock"></span>
-      <button class="view-toggle-btn" id="view-toggle-btn" title="Toggle view" aria-label="Toggle workspace / office view">🏢</button>
-      <button class="theme-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">☀</button>
-      <button class="settings-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+    <div class="navbar-center">
+      <div class="navbar-search" id="navbar-search">
+        <svg class="navbar-search-icon" width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M8.5 3a5.5 5.5 0 014.38 8.88l4.12 4.12a.75.75 0 01-1.06 1.06l-4.12-4.12A5.5 5.5 0 118.5 3zm0 1.5a4 4 0 100 8 4 4 0 000-8z"/></svg>
+        <input type="text" id="navbar-search-input" data-i18n-placeholder="nav.searchPlaceholder" placeholder="搜尋…" aria-label="Search">
+        <kbd class="navbar-search-kbd">⌘K</kbd>
+      </div>
+      <nav class="navbar-breadcrumb" id="navbar-breadcrumb" aria-label="Breadcrumb">
+        <span id="breadcrumb-text">控制台</span>
+      </nav>
+    </div>
+    <div class="navbar-right">
+      <span class="navbar-clock" id="clock" aria-label="Clock"></span>
+      <button class="navbar-icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v1a1 1 0 01-2 0V4a1 1 0 011-1zm4.95 1.64a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.7-.71a1 1 0 011.42 0zM17 10a1 1 0 01-1 1h-1a1 1 0 010-2h1a1 1 0 011 1zm-2.05 4.95a1 1 0 01-1.41 0l-.71-.7a1 1 0 011.41-1.42l.71.71a1 1 0 010 1.41zM10 15a1 1 0 011 1v1a1 1 0 01-2 0v-1a1 1 0 011-1zm-4.95-.64a1 1 0 010-1.41l.71-.71a1 1 0 011.41 1.41l-.7.71a1 1 0 01-1.42 0zM5 10a1 1 0 01-1 1H3a1 1 0 010-2h1a1 1 0 011 1zm.64-4.95a1 1 0 011.41 0l.71.7A1 1 0 016.35 7.2l-.71-.71a1 1 0 010-1.41zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style="display:none"><path d="M17.29 13.35A8 8 0 116.65 2.71a1 1 0 011.22 1.22 6 6 0 008.21 8.21 1 1 0 011.22 1.22z"/></svg>
+      </button>
+      <button class="navbar-icon-btn navbar-notifications-btn" id="notifications-btn" title="Notifications" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.59l-1.3 2.6A1 1 0 003.6 15.5h12.8a1 1 0 00.9-1.31L16 11.59V8a6 6 0 00-6-6zm-2 14a2 2 0 104 0H8z"/></svg>
+      </button>
+      <div class="navbar-avatar" id="navbar-avatar" role="button" tabindex="0" title="Account" aria-label="Account">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a4 4 0 110 8 4 4 0 010-8zM4 16c0-3.31 2.69-6 6-6s6 2.69 6 6H4z"/></svg>
+      </div>
     </div>
   </header>
 
-  <!-- App Shell: 3-column grid -->
+  <!-- App Shell: nav-sidebar + main content -->
   <div class="app-shell" id="app-shell">
-    <!-- Left Sidebar -->
-    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Agent list">
-      <div class="sidebar-header">
-        <span class="sidebar-title" id="sidebar-title">AI 助理團隊</span>
+    <!-- Navigation Sidebar -->
+    <aside class="nav-sidebar" id="nav-sidebar" role="navigation" aria-label="Main navigation">
+      <nav class="nav-sidebar-menu" id="nav-sidebar-menu" role="menu">
+        <!-- Built by nav-sidebar.js -->
+      </nav>
+      <div class="nav-sidebar-footer" id="nav-sidebar-footer">
+        <!-- Stats footer built by nav-sidebar.js -->
       </div>
-      <div class="sidebar-search">
-        <input type="text" class="sidebar-search-input" id="sidebar-search" placeholder="搜尋助理…" aria-label="Search agents">
-      </div>
-      <ul class="sidebar-agent-list" id="sidebar-agent-list" role="list"></ul>
     </aside>
 
-    <!-- Main Content (Workspace or Office Scene) -->
+    <!-- Main Content Area (route-switched views) -->
     <main class="main-content" id="main-content" role="main">
-      <!-- Workspace View (default) -->
-      <div class="workspace-view" id="workspace-view">
-        <div class="workspace-grid" id="workspace-grid"></div>
-      </div>
-      <!-- Office Scene View (lazy-loaded) -->
-      <div class="office-view" id="office-view" style="display:none">
+      <!-- Dashboard View -->
+      <div class="view-container" id="view-dashboard" style="display:none"></div>
+      <!-- Agents View -->
+      <div class="view-container" id="view-agents" style="display:none"></div>
+      <!-- Chat View -->
+      <div class="view-container view-chat-container" id="view-chat" style="display:none"></div>
+      <!-- Office View -->
+      <div class="view-container view-office-container" id="view-office" style="display:none">
         <canvas id="office" role="img" aria-label="Manufacturing HQ pixel art office scene"></canvas>
       </div>
+      <!-- Settings View -->
+      <div class="view-container" id="view-settings" style="display:none"></div>
     </main>
-
-    <!-- Chat Panel (always visible on desktop) -->
-    <section class="chat-panel" id="chat-panel-section" role="complementary" aria-label="Chat">
-      <!-- Chat content built by chat-panel.js -->
-    </section>
   </div>
 
-  <!-- Agent Info Panel (shown on hover in Office view) -->
+  <!-- Agent Info Panel (office view hover tooltip) -->
   <div class="agent-panel" id="agent-panel" style="display:none" role="tooltip">
     <div class="agent-panel-name" id="panel-name"></div>
     <div class="agent-panel-role" id="panel-role"></div>
@@ -69,12 +88,21 @@
 
   <!-- Mobile bottom nav (≤768px) -->
   <nav class="mobile-nav" id="mobile-nav" role="tablist" aria-label="Navigation">
-    <button class="mobile-nav-btn active" data-tab="agents" role="tab" aria-selected="true">👥</button>
-    <button class="mobile-nav-btn" data-tab="workspace" role="tab" aria-selected="false">📊</button>
-    <button class="mobile-nav-btn" data-tab="chat" role="tab" aria-selected="false">💬</button>
+    <button class="mobile-nav-btn active" data-route="dashboard" role="tab" aria-selected="true" aria-label="Dashboard">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 9h3v8h4v-5h2v5h4V9h3L10 2z"/></svg>
+    </button>
+    <button class="mobile-nav-btn" data-route="agents" role="tab" aria-selected="false" aria-label="Agents">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a3 3 0 013 3v1h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h2V5a3 3 0 013-3zm-2 8a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm4 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
+    </button>
+    <button class="mobile-nav-btn" data-route="chat" role="tab" aria-selected="false" aria-label="Chat">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 4V4z"/></svg>
+    </button>
+    <button class="mobile-nav-btn" data-route="office" role="tab" aria-selected="false" aria-label="Office">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a1 1 0 011-1h10a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V3zm2 1v2h3V4H6zm5 0v2h3V4h-3zM6 8v2h3V8H6zm5 0v2h3V8h-3zM6 12v2h3v-2H6zm5 0v2h3v-2h-3z"/></svg>
+    </button>
   </nav>
 
-  <!-- Scripts: i18n + auth gate first -->
+  <!-- Scripts: load order matters -->
   <script src="js/i18n.js"></script>
   <script src="js/auth-gate.js"></script>
   <script src="js/pixel-sprites.js"></script>
@@ -85,7 +113,8 @@
   <script src="js/chat-panel.js"></script>
   <script src="js/settings-panel.js"></script>
   <script src="js/view-manager.js"></script>
-  <script src="js/agent-sidebar.js"></script>
+  <script src="js/nav-sidebar.js"></script>
+  <script src="js/dashboard-view.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

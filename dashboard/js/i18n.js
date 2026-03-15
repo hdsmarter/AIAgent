@@ -93,6 +93,58 @@ const I18n = {
     'workspace.noChat':   { 'zh-TW': '\u5C1A\u672A\u958B\u59CB\u5C0D\u8A71', 'zh-CN': '\u5C1A\u672A\u5F00\u59CB\u5BF9\u8BDD', en: 'No conversation yet' },
     'chat.offline2':      { 'zh-TW': '\u9023\u7DDA\u4E2D\u65B7\uFF0C\u8ACB\u6AA2\u67E5\u8A2D\u5B9A', 'zh-CN': '\u8FDE\u7EBF\u4E2D\u65AD\uFF0C\u8BF7\u68C0\u67E5\u8BBE\u7F6E', en: 'Disconnected, check settings' },
 
+    // ── Nav Sidebar ──────────────────────────────
+    'nav.dashboard':       { 'zh-TW': '\u63A7\u5236\u53F0',       'zh-CN': '\u63A7\u5236\u53F0',       en: 'Dashboard' },
+    'nav.aiAssistant':     { 'zh-TW': 'AI \u52A9\u7406',     'zh-CN': 'AI \u52A9\u7406',     en: 'AI Assistant' },
+    'nav.agentOverview':   { 'zh-TW': '\u52A9\u7406\u7E3D\u89BD',     'zh-CN': '\u52A9\u7406\u603B\u89C8',     en: 'Agent Overview' },
+    'nav.conversation':    { 'zh-TW': '\u5C0D\u8A71',         'zh-CN': '\u5BF9\u8BDD',         en: 'Conversation' },
+    'nav.office':          { 'zh-TW': '\u8FA6\u516C\u5BA4\u5834\u666F',   'zh-CN': '\u529E\u516C\u5BA4\u573A\u666F',   en: 'Office Scene' },
+    'nav.settings':        { 'zh-TW': '\u8A2D\u5B9A',         'zh-CN': '\u8BBE\u7F6E',         en: 'Settings' },
+    'nav.connection':      { 'zh-TW': '\u9023\u7DDA\u8A2D\u5B9A',     'zh-CN': '\u8FDE\u7EBF\u8BBE\u7F6E',     en: 'Connection' },
+    'nav.language':        { 'zh-TW': '\u8A9E\u8A00',         'zh-CN': '\u8BED\u8A00',         en: 'Language' },
+    'nav.theme':           { 'zh-TW': '\u4E3B\u984C',         'zh-CN': '\u4E3B\u9898',         en: 'Theme' },
+    'nav.account':         { 'zh-TW': '\u5E33\u6236',         'zh-CN': '\u8D26\u6237',         en: 'Account' },
+    'nav.security':        { 'zh-TW': '\u5B89\u5168\u8A2D\u5B9A',     'zh-CN': '\u5B89\u5168\u8BBE\u7F6E',     en: 'Security' },
+    'nav.logout':          { 'zh-TW': '\u767B\u51FA',         'zh-CN': '\u9000\u51FA',         en: 'Logout' },
+    'nav.agents':          { 'zh-TW': '\u52A9\u7406',         'zh-CN': '\u52A9\u7406',         en: 'Agents' },
+    'nav.searchAgents':    { 'zh-TW': '\u641C\u5C0B\u52A9\u7406\u2026',   'zh-CN': '\u641C\u7D22\u52A9\u7406\u2026',   en: 'Search agents\u2026' },
+    'nav.searchPlaceholder': { 'zh-TW': '\u641C\u5C0B\u2026',     'zh-CN': '\u641C\u7D22\u2026',       en: 'Search\u2026' },
+    'nav.chat':            { 'zh-TW': '\u5C0D\u8A71',         'zh-CN': '\u5BF9\u8BDD',         en: 'Chat' },
+
+    // ── Dashboard View ───────────────────────────
+    'dash.morning':        { 'zh-TW': '\u65E9\u5B89\uFF0C',       'zh-CN': '\u65E9\u4E0A\u597D\uFF0C',     en: 'Good morning, ' },
+    'dash.afternoon':      { 'zh-TW': '\u5348\u5B89\uFF0C',       'zh-CN': '\u4E0B\u5348\u597D\uFF0C',     en: 'Good afternoon, ' },
+    'dash.evening':        { 'zh-TW': '\u665A\u5B89\uFF0C',       'zh-CN': '\u665A\u4E0A\u597D\uFF0C',     en: 'Good evening, ' },
+    'dash.welcomeSub':     { 'zh-TW': '\u6B61\u8FCE\u4F7F\u7528 HD \u667A\u52D5\u5316 AI Agent \u5E73\u53F0', 'zh-CN': '\u6B22\u8FCE\u4F7F\u7528 HD \u667A\u52A8\u5316 AI Agent \u5E73\u53F0', en: 'Welcome to HD Smarter AI Agent Platform' },
+    'dash.startChat':      { 'zh-TW': '\u958B\u59CB\u5C0D\u8A71',     'zh-CN': '\u5F00\u59CB\u5BF9\u8BDD',     en: 'Start Chat' },
+    'dash.viewAgents':     { 'zh-TW': '\u67E5\u770B\u52A9\u7406',     'zh-CN': '\u67E5\u770B\u52A9\u7406',     en: 'View Agents' },
+    'dash.officeScene':    { 'zh-TW': '\u8FA6\u516C\u5BA4\u5834\u666F',   'zh-CN': '\u529E\u516C\u5BA4\u573A\u666F',   en: 'Office Scene' },
+    'dash.connSettings':   { 'zh-TW': '\u9023\u7DDA\u8A2D\u5B9A',     'zh-CN': '\u8FDE\u7EBF\u8BBE\u7F6E',     en: 'Connection' },
+    'dash.agentCount':     { 'zh-TW': 'AI \u52A9\u7406\u6578',   'zh-CN': 'AI \u52A9\u7406\u6570',   en: 'AI Agents' },
+    'dash.gatewayStatus':  { 'zh-TW': 'Gateway \u72C0\u614B', 'zh-CN': 'Gateway \u72B6\u6001', en: 'Gateway Status' },
+    'dash.telegramStatus': { 'zh-TW': 'Telegram \u72C0\u614B', 'zh-CN': 'Telegram \u72B6\u6001', en: 'Telegram Status' },
+    'dash.lineStatus':     { 'zh-TW': 'LINE \u72C0\u614B',   'zh-CN': 'LINE \u72B6\u6001',   en: 'LINE Status' },
+    'dash.recentChats':    { 'zh-TW': '\u8FD1\u671F\u5C0D\u8A71',     'zh-CN': '\u8FD1\u671F\u5BF9\u8BDD',     en: 'Recent Conversations' },
+    'dash.noRecentChats':  { 'zh-TW': '\u5C1A\u7121\u5C0D\u8A71\u8A18\u9304', 'zh-CN': '\u6682\u65E0\u5BF9\u8BDD\u8BB0\u5F55', en: 'No recent conversations' },
+    'dash.systemActivity': { 'zh-TW': '\u7CFB\u7D71\u6D3B\u52D5',     'zh-CN': '\u7CFB\u7EDF\u6D3B\u52A8',     en: 'System Activity' },
+    'dash.noActivity':     { 'zh-TW': '\u5C1A\u7121\u6D3B\u52D5',     'zh-CN': '\u6682\u65E0\u6D3B\u52A8',     en: 'No activity' },
+
+    // ── Agents View ──────────────────────────────
+    'agents.filterAll':    { 'zh-TW': '\u5168\u90E8',         'zh-CN': '\u5168\u90E8',         en: 'All' },
+    'agents.filterActive': { 'zh-TW': '\u57F7\u884C\u4E2D',       'zh-CN': '\u8FD0\u884C\u4E2D',       en: 'Active' },
+    'agents.filterIdle':   { 'zh-TW': '\u5F85\u547D',         'zh-CN': '\u5F85\u547D',         en: 'Idle' },
+    'agents.online':       { 'zh-TW': '\u5DF2\u4E0A\u7DDA',       'zh-CN': '\u5DF2\u4E0A\u7EBF',       en: 'Online' },
+    'agents.active':       { 'zh-TW': '\u57F7\u884C\u4E2D',       'zh-CN': '\u8FD0\u884C\u4E2D',       en: 'Active' },
+    'agents.startChat':    { 'zh-TW': '\u958B\u59CB\u5C0D\u8A71',     'zh-CN': '\u5F00\u59CB\u5BF9\u8BDD',     en: 'Start Chat' },
+
+    // ── Chat View ────────────────────────────────
+    'chat.agentList':      { 'zh-TW': 'AI \u52A9\u7406',     'zh-CN': 'AI \u52A9\u7406',     en: 'AI Agents' },
+    'chat.searchAgent':    { 'zh-TW': '\u641C\u5C0B\u52A9\u7406\u2026',   'zh-CN': '\u641C\u7D22\u52A9\u7406\u2026',   en: 'Search agents\u2026' },
+
+    // ── Settings View ────────────────────────────
+    'settings.themeLabel':   { 'zh-TW': '\u4E3B\u984C',       'zh-CN': '\u4E3B\u9898',         en: 'Theme' },
+    'settings.securityInfo': { 'zh-TW': '\u767B\u5165\u968E\u6BB5\u5B89\u5168\u8A2D\u5B9A\u3002\u9592\u7F6E 30 \u5206\u9418\u5C07\u81EA\u52D5\u767B\u51FA\u3002', 'zh-CN': '\u767B\u5F55\u4F1A\u8BDD\u5B89\u5168\u8BBE\u7F6E\u3002\u95F2\u7F6E 30 \u5206\u949F\u5C06\u81EA\u52A8\u9000\u51FA\u3002', en: 'Session security settings. Auto-logout after 30 minutes of inactivity.' },
+
     // ── Office Scene — State Names ──────────────
     'state.type':  { 'zh-TW': '\u5DE5\u4F5C\u4E2D',   'zh-CN': '\u5DE5\u4F5C\u4E2D',   en: 'Working' },
     'state.walk':  { 'zh-TW': '\u8D70\u52D5\u4E2D',   'zh-CN': '\u8D70\u52A8\u4E2D',   en: 'Walking' },

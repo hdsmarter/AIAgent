@@ -1,7 +1,7 @@
 /**
- * settings-panel.js — Settings modal (SRP)
- * Language selector, quad-mode chat (Telegram/Gateway/OpenRouter/Gateway API), connection settings
- * All strings via I18n.t() — zero hardcoded text
+ * settings-panel.js — Inline settings page with tabs
+ * Tabs: Connection / Language / Theme / Security
+ * No modal — renders inside #view-settings as a page
  */
 class SettingsPanel {
   static get UI_TEXT() {
@@ -40,297 +40,309 @@ class SettingsPanel {
 
   constructor(chatClient) {
     this.cc = chatClient;
-    this.isOpen = false;
-    this._build();
+    this._containerEl = document.getElementById('view-settings');
+    this._activeTab = 'connection';
+    this._built = false;
 
-    I18n.onChange(() => this._updateTexts());
+    I18n.onChange(() => { if (this._built) this._rebuild(); });
+  }
+
+  init(opts) {
+    if (opts && opts.tab) this._activeTab = opts.tab;
+    this._build();
+    this._built = true;
+  }
+
+  show(opts) {
+    if (opts && opts.tab) {
+      this._activeTab = opts.tab;
+      this._switchTab(this._activeTab);
+    }
+    // Refresh values from ChatClient
+    this._loadValues();
   }
 
   _build() {
-    const T = SettingsPanel.UI_TEXT;
+    var T = SettingsPanel.UI_TEXT;
+    this._containerEl.textContent = '';
 
-    // Overlay
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'settings-overlay';
-    this.overlay.addEventListener('click', () => this.close());
-
-    // Modal
-    this.modal = document.createElement('div');
-    this.modal.className = 'settings-modal';
-    this.modal.setAttribute('role', 'dialog');
-    this.modal.setAttribute('aria-label', T.title);
+    var page = document.createElement('div');
+    page.className = 'settings-page';
 
     // Title
-    this.titleEl = document.createElement('h2');
-    this.titleEl.className = 'settings-title';
-    this.titleEl.textContent = T.title;
-    this.modal.appendChild(this.titleEl);
+    this._titleEl = document.createElement('h1');
+    this._titleEl.className = 'settings-page-title';
+    this._titleEl.textContent = T.title;
+    page.appendChild(this._titleEl);
 
-    // ── Language selector ────────────────────────
-    this.langGroup = document.createElement('div');
-    this.langGroup.className = 'settings-field';
-    this.langLabel = document.createElement('label');
-    this.langLabel.textContent = T.langLabel;
-    this.langSelect = document.createElement('select');
-    this.langSelect.className = 'settings-input settings-select';
-    this.langSelect.setAttribute('aria-label', T.langLabel);
-    const langOptions = [
-      { value: 'zh-TW', label: '\u7E41\u9AD4\u4E2D\u6587' },
-      { value: 'zh-CN', label: '\u7B80\u4F53\u4E2D\u6587' },
-      { value: 'en',    label: 'English' },
+    // Tabs
+    var tabBar = document.createElement('div');
+    tabBar.className = 'settings-tabs';
+    this._tabBar = tabBar;
+
+    var tabs = [
+      { id: 'connection', icon: SvgIcons.link, labelKey: 'nav.connection' },
+      { id: 'language', icon: SvgIcons.globe, labelKey: 'nav.language' },
+      { id: 'theme', icon: SvgIcons.palette, labelKey: 'nav.theme' },
+      { id: 'security', icon: SvgIcons.shield, labelKey: 'nav.security' },
     ];
-    for (const opt of langOptions) {
-      const o = document.createElement('option');
-      o.value = opt.value;
-      o.textContent = opt.label;
-      this.langSelect.appendChild(o);
+
+    for (var i = 0; i < tabs.length; i++) {
+      var tab = tabs[i];
+      var tabBtn = document.createElement('button');
+      tabBtn.className = 'settings-tab' + (tab.id === this._activeTab ? ' active' : '');
+      tabBtn.dataset.tab = tab.id;
+      tabBtn.appendChild(svgFromTemplate(tab.icon));
+      var tabLabel = document.createElement('span');
+      tabLabel.textContent = I18n.t(tab.labelKey);
+      tabBtn.appendChild(tabLabel);
+      tabBtn.addEventListener('click', (function(tabId) {
+        return function() { this._switchTab(tabId); }.bind(this);
+      }.bind(this))(tab.id));
+      tabBar.appendChild(tabBtn);
     }
-    this.langSelect.value = I18n.lang;
-    this.langGroup.appendChild(this.langLabel);
-    this.langGroup.appendChild(this.langSelect);
-    this.modal.appendChild(this.langGroup);
+    page.appendChild(tabBar);
 
-    // ── Chat mode selector ──────────────────────
-    this.modeGroup = document.createElement('div');
-    this.modeGroup.className = 'settings-field';
-    this.modeLabel = document.createElement('label');
-    this.modeLabel.textContent = T.chatModeLabel;
-    this.modeSelect = document.createElement('select');
-    this.modeSelect.className = 'settings-input settings-select';
-    this.modeSelect.setAttribute('aria-label', T.chatModeLabel);
-    this._tgOption = document.createElement('option');
-    this._tgOption.value = 'telegram';
-    this._tgOption.textContent = T.chatModeTg;
-    this._gwOption = document.createElement('option');
-    this._gwOption.value = 'gateway';
-    this._gwOption.textContent = T.chatModeGw;
-    this._orOption = document.createElement('option');
-    this._orOption.value = 'openrouter';
-    this._orOption.textContent = T.chatModeOr;
-    this._gwApiOption = document.createElement('option');
-    this._gwApiOption.value = 'gateway-api';
-    this._gwApiOption.textContent = T.chatModeGwApi;
-    this.modeSelect.appendChild(this._tgOption);
-    this.modeSelect.appendChild(this._gwOption);
-    this.modeSelect.appendChild(this._orOption);
-    this.modeSelect.appendChild(this._gwApiOption);
-    this.modeSelect.value = this.cc.mode;
+    // Tab contents
+    this._tabContents = {};
+
+    // ── Connection Tab ──────────────────────────
+    var connTab = document.createElement('div');
+    connTab.className = 'settings-tab-content' + (this._activeTab === 'connection' ? ' active' : '');
+
+    // Chat mode selector
+    this._addField(connTab, T.chatModeLabel, 'select', 'mode', [
+      { value: 'telegram', label: T.chatModeTg },
+      { value: 'gateway', label: T.chatModeGw },
+      { value: 'openrouter', label: T.chatModeOr },
+      { value: 'gateway-api', label: T.chatModeGwApi },
+    ]);
+    this.modeSelect = connTab.querySelector('.settings-input-mode');
     this.modeSelect.addEventListener('change', () => this._toggleModeFields());
-    this.modeGroup.appendChild(this.modeLabel);
-    this.modeGroup.appendChild(this.modeSelect);
-    this.modal.appendChild(this.modeGroup);
 
-    // ── Telegram fields ─────────────────────────
-    this.tgFieldsContainer = document.createElement('div');
-    this.tgFieldsContainer.className = 'settings-mode-fields';
+    // Telegram fields
+    this.tgFields = document.createElement('div');
+    this.tgFields.className = 'settings-mode-fields';
+    this._addField(this.tgFields, T.tgTokenLabel, 'text', 'tg-token');
+    this._addField(this.tgFields, T.tgChatIdLabel, 'text', 'tg-chat-id');
+    connTab.appendChild(this.tgFields);
 
-    this._addFieldTo(this.tgFieldsContainer, T.tgTokenLabel, 'tg-token');
-    this.tgTokenInput = this.tgFieldsContainer.querySelector('.settings-input-tg-token');
-    this.tgTokenInput.value = this.cc.tgToken;
+    // Gateway WS fields
+    this.gwFields = document.createElement('div');
+    this.gwFields.className = 'settings-mode-fields';
+    this._addField(this.gwFields, T.urlLabel, 'text', 'url', null, T.urlPlaceholder);
+    this._addField(this.gwFields, T.tokenLabel, 'password', 'token', null, T.tokenPlaceholder);
+    connTab.appendChild(this.gwFields);
 
-    this._addFieldTo(this.tgFieldsContainer, T.tgChatIdLabel, 'tg-chat-id');
-    this.tgChatIdInput = this.tgFieldsContainer.querySelector('.settings-input-tg-chat-id');
-    this.tgChatIdInput.value = this.cc.tgChatId;
+    // OpenRouter fields
+    this.orFields = document.createElement('div');
+    this.orFields.className = 'settings-mode-fields';
+    this._addField(this.orFields, T.orApiKeyLabel, 'password', 'or-api-key', null, T.orApiKeyPlaceholder);
+    this._addField(this.orFields, T.orModelLabel, 'text', 'or-model', null, ChatClient.DEFAULTS.openRouterModel);
+    connTab.appendChild(this.orFields);
 
-    this.modal.appendChild(this.tgFieldsContainer);
+    // Gateway API fields
+    this.gwApiFields = document.createElement('div');
+    this.gwApiFields.className = 'settings-mode-fields';
+    this._addField(this.gwApiFields, T.gwApiUrlLabel, 'text', 'gw-api-url', null, T.gwApiUrlPlaceholder);
+    this._addField(this.gwApiFields, T.gwApiTokenLabel, 'password', 'gw-api-token');
+    this._addField(this.gwApiFields, T.gwApiModelLabel, 'text', 'gw-api-model', null, ChatClient.DEFAULTS.gwApiModel);
+    connTab.appendChild(this.gwApiFields);
 
-    // ── Gateway fields ──────────────────────────
-    this.gwFieldsContainer = document.createElement('div');
-    this.gwFieldsContainer.className = 'settings-mode-fields';
-
-    this._addFieldTo(this.gwFieldsContainer, T.urlLabel, 'url');
-    this.urlInput = this.gwFieldsContainer.querySelector('.settings-input-url');
-    this.urlInput.placeholder = T.urlPlaceholder;
-    this.urlInput.value = this.cc.url;
-
-    this._addFieldTo(this.gwFieldsContainer, T.tokenLabel, 'token');
-    this.tokenInput = this.gwFieldsContainer.querySelector('.settings-input-token');
-    this.tokenInput.placeholder = T.tokenPlaceholder;
-    this.tokenInput.type = 'password';
-    this.tokenInput.value = this.cc.token;
-
-    this.modal.appendChild(this.gwFieldsContainer);
-
-    // ── OpenRouter fields ───────────────────────
-    this.orFieldsContainer = document.createElement('div');
-    this.orFieldsContainer.className = 'settings-mode-fields';
-
-    this._addFieldTo(this.orFieldsContainer, T.orApiKeyLabel, 'or-api-key');
-    this.orApiKeyInput = this.orFieldsContainer.querySelector('.settings-input-or-api-key');
-    this.orApiKeyInput.placeholder = T.orApiKeyPlaceholder;
-    this.orApiKeyInput.type = 'password';
-    this.orApiKeyInput.value = this.cc.orApiKey;
-    this.orApiKeyInput.autocomplete = 'off';
-
-    this._addFieldTo(this.orFieldsContainer, T.orModelLabel, 'or-model');
-    this.orModelInput = this.orFieldsContainer.querySelector('.settings-input-or-model');
-    this.orModelInput.value = this.cc.orModel;
-    this.orModelInput.placeholder = ChatClient.DEFAULTS.openRouterModel;
-
-    this.modal.appendChild(this.orFieldsContainer);
-
-    // ── Gateway API fields ───────────────────────
-    this.gwApiFieldsContainer = document.createElement('div');
-    this.gwApiFieldsContainer.className = 'settings-mode-fields';
-
-    this._addFieldTo(this.gwApiFieldsContainer, T.gwApiUrlLabel, 'gw-api-url');
-    this.gwApiUrlInput = this.gwApiFieldsContainer.querySelector('.settings-input-gw-api-url');
-    this.gwApiUrlInput.placeholder = T.gwApiUrlPlaceholder;
-    this.gwApiUrlInput.value = this.cc.gwApiUrl;
-
-    this._addFieldTo(this.gwApiFieldsContainer, T.gwApiTokenLabel, 'gw-api-token');
-    this.gwApiTokenInput = this.gwApiFieldsContainer.querySelector('.settings-input-gw-api-token');
-    this.gwApiTokenInput.type = 'password';
-    this.gwApiTokenInput.value = this.cc.gwApiToken;
-
-    this._addFieldTo(this.gwApiFieldsContainer, T.gwApiModelLabel, 'gw-api-model');
-    this.gwApiModelInput = this.gwApiFieldsContainer.querySelector('.settings-input-gw-api-model');
-    this.gwApiModelInput.value = this.cc.gwApiModel;
-    this.gwApiModelInput.placeholder = ChatClient.DEFAULTS.gwApiModel;
-
-    this.modal.appendChild(this.gwApiFieldsContainer);
-
-    // Status indicator
+    // Status
     this.statusEl = document.createElement('div');
     this.statusEl.className = 'settings-status';
     this.statusEl.setAttribute('aria-live', 'polite');
-    this.modal.appendChild(this.statusEl);
+    connTab.appendChild(this.statusEl);
 
-    // Buttons row
-    const btnRow = document.createElement('div');
+    // Buttons
+    var btnRow = document.createElement('div');
     btnRow.className = 'settings-buttons';
+    this.testBtn = this._createBtn('settings-btn-test', T.testBtn, () => this._testConnection());
+    this.saveBtn = this._createBtn('settings-btn-save', T.saveBtn, () => this._saveConnection());
+    btnRow.appendChild(this.testBtn);
+    btnRow.appendChild(this.saveBtn);
+    connTab.appendChild(btnRow);
 
-    this.testBtn = document.createElement('button');
-    this.testBtn.className = 'settings-btn settings-btn-test';
-    this.testBtn.textContent = T.testBtn;
-    this.testBtn.addEventListener('click', () => this._testConnection());
+    this._tabContents.connection = connTab;
+    page.appendChild(connTab);
 
-    this.saveBtn = document.createElement('button');
-    this.saveBtn.className = 'settings-btn settings-btn-save';
-    this.saveBtn.textContent = T.saveBtn;
-    this.saveBtn.addEventListener('click', () => this._save());
+    // ── Language Tab ────────────────────────────
+    var langTab = document.createElement('div');
+    langTab.className = 'settings-tab-content' + (this._activeTab === 'language' ? ' active' : '');
 
-    this.cancelBtn = document.createElement('button');
-    this.cancelBtn.className = 'settings-btn settings-btn-cancel';
-    this.cancelBtn.textContent = T.cancelBtn;
-    this.cancelBtn.addEventListener('click', () => this.close());
+    this._addField(langTab, T.langLabel, 'select', 'lang', [
+      { value: 'zh-TW', label: '\u7E41\u9AD4\u4E2D\u6587' },
+      { value: 'zh-CN', label: '\u7B80\u4F53\u4E2D\u6587' },
+      { value: 'en', label: 'English' },
+    ]);
+    this.langSelect = langTab.querySelector('.settings-input-lang');
+
+    var langSaveRow = document.createElement('div');
+    langSaveRow.className = 'settings-buttons';
+    langSaveRow.appendChild(this._createBtn('settings-btn-save', T.saveBtn, () => this._saveLang()));
+    langTab.appendChild(langSaveRow);
+
+    this._tabContents.language = langTab;
+    page.appendChild(langTab);
+
+    // ── Theme Tab ───────────────────────────────
+    var themeTab = document.createElement('div');
+    themeTab.className = 'settings-tab-content' + (this._activeTab === 'theme' ? ' active' : '');
+
+    this._addField(themeTab, I18n.t('settings.themeLabel') || 'Theme', 'select', 'theme-select', [
+      { value: 'light', label: I18n.t('app.themeLight') },
+      { value: 'dark', label: I18n.t('app.themeDark') },
+    ]);
+    this.themeSelect = themeTab.querySelector('.settings-input-theme-select');
+
+    var themeSaveRow = document.createElement('div');
+    themeSaveRow.className = 'settings-buttons';
+    themeSaveRow.appendChild(this._createBtn('settings-btn-save', T.saveBtn, () => this._saveTheme()));
+    themeTab.appendChild(themeSaveRow);
+
+    this._tabContents.theme = themeTab;
+    page.appendChild(themeTab);
+
+    // ── Security Tab ────────────────────────────
+    var secTab = document.createElement('div');
+    secTab.className = 'settings-tab-content' + (this._activeTab === 'security' ? ' active' : '');
+
+    var secInfo = document.createElement('p');
+    secInfo.style.cssText = 'font-size:13px;color:var(--text-dim);margin-bottom:16px;';
+    secInfo.textContent = I18n.t('settings.securityInfo') || 'Session security settings';
+    secTab.appendChild(secInfo);
 
     this.logoutBtn = document.createElement('button');
     this.logoutBtn.className = 'settings-btn-logout';
     this.logoutBtn.textContent = I18n.t('auth.logoutBtn');
     this.logoutBtn.addEventListener('click', () => AuthGate.logout());
+    secTab.appendChild(this.logoutBtn);
 
-    btnRow.appendChild(this.logoutBtn);
-    btnRow.appendChild(this.testBtn);
-    btnRow.appendChild(this.cancelBtn);
-    btnRow.appendChild(this.saveBtn);
-    this.modal.appendChild(btnRow);
+    this._tabContents.security = secTab;
+    page.appendChild(secTab);
 
-    document.body.appendChild(this.overlay);
-    document.body.appendChild(this.modal);
+    this._containerEl.appendChild(page);
 
+    // Load values
+    this._loadValues();
     this._toggleModeFields();
   }
 
-  _addFieldTo(container, label, name) {
-    const group = document.createElement('div');
+  _addField(container, label, type, name, options, placeholder) {
+    var group = document.createElement('div');
     group.className = 'settings-field';
-    const lbl = document.createElement('label');
+    var lbl = document.createElement('label');
     lbl.textContent = label;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'settings-input settings-input-' + name;
-    input.setAttribute('aria-label', label);
     group.appendChild(lbl);
-    group.appendChild(input);
+
+    if (type === 'select' && options) {
+      var select = document.createElement('select');
+      select.className = 'settings-input settings-select settings-input-' + name;
+      select.setAttribute('aria-label', label);
+      for (var i = 0; i < options.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = options[i].value;
+        opt.textContent = options[i].label;
+        select.appendChild(opt);
+      }
+      group.appendChild(select);
+    } else {
+      var input = document.createElement('input');
+      input.type = type || 'text';
+      input.className = 'settings-input settings-input-' + name;
+      input.setAttribute('aria-label', label);
+      if (placeholder) input.placeholder = placeholder;
+      if (type === 'password') input.autocomplete = 'off';
+      group.appendChild(input);
+    }
     container.appendChild(group);
   }
 
-  _toggleModeFields() {
-    const mode = this.modeSelect.value;
-    this.tgFieldsContainer.style.display = mode === 'telegram' ? 'block' : 'none';
-    this.gwFieldsContainer.style.display = mode === 'gateway' ? 'block' : 'none';
-    this.orFieldsContainer.style.display = mode === 'openrouter' ? 'block' : 'none';
-    this.gwApiFieldsContainer.style.display = mode === 'gateway-api' ? 'block' : 'none';
+  _createBtn(cls, text, onClick) {
+    var btn = document.createElement('button');
+    btn.className = cls;
+    btn.textContent = text;
+    btn.addEventListener('click', onClick);
+    return btn;
   }
 
-  _updateTexts() {
-    const T = SettingsPanel.UI_TEXT;
-    this.titleEl.textContent = T.title;
-    this.modal.setAttribute('aria-label', T.title);
-    this.langLabel.textContent = T.langLabel;
-    this.modeLabel.textContent = T.chatModeLabel;
-    this._tgOption.textContent = T.chatModeTg;
-    this._gwOption.textContent = T.chatModeGw;
-    this._orOption.textContent = T.chatModeOr;
-    this._gwApiOption.textContent = T.chatModeGwApi;
-    this.testBtn.textContent = T.testBtn;
-    this.saveBtn.textContent = T.saveBtn;
-    this.cancelBtn.textContent = T.cancelBtn;
-    this.logoutBtn.textContent = I18n.t('auth.logoutBtn');
-    this._updateStatus();
+  _switchTab(tabId) {
+    this._activeTab = tabId;
+    // Update tab buttons
+    var btns = this._tabBar.querySelectorAll('.settings-tab');
+    btns.forEach(function(b) { b.classList.toggle('active', b.dataset.tab === tabId); });
+    // Show/hide content
+    for (var key in this._tabContents) {
+      this._tabContents[key].classList.toggle('active', key === tabId);
+    }
   }
 
-  open() {
-    this.isOpen = true;
-    this.langSelect.value = I18n.lang;
-    this.modeSelect.value = this.cc.mode;
-    this.urlInput.value = this.cc.url;
-    this.tokenInput.value = this.cc.token;
-    this.tgTokenInput.value = this.cc.tgToken;
-    this.tgChatIdInput.value = this.cc.tgChatId;
-    this.orApiKeyInput.value = this.cc.orApiKey;
-    this.orModelInput.value = this.cc.orModel;
-    this.gwApiUrlInput.value = this.cc.gwApiUrl;
-    this.gwApiTokenInput.value = this.cc.gwApiToken;
-    this.gwApiModelInput.value = this.cc.gwApiModel;
+  _loadValues() {
+    if (this.modeSelect) this.modeSelect.value = this.cc.mode;
+    if (this.langSelect) this.langSelect.value = I18n.lang;
+    if (this.themeSelect) this.themeSelect.value = ThemePalette._current || 'light';
+
+    var getInput = function(name) {
+      return this._containerEl.querySelector('.settings-input-' + name);
+    }.bind(this);
+
+    var setVal = function(name, val) {
+      var el = getInput(name);
+      if (el) el.value = val || '';
+    };
+
+    setVal('tg-token', this.cc.tgToken);
+    setVal('tg-chat-id', this.cc.tgChatId);
+    setVal('url', this.cc.url);
+    setVal('token', this.cc.token);
+    setVal('or-api-key', this.cc.orApiKey);
+    setVal('or-model', this.cc.orModel);
+    setVal('gw-api-url', this.cc.gwApiUrl);
+    setVal('gw-api-token', this.cc.gwApiToken);
+    setVal('gw-api-model', this.cc.gwApiModel);
+
     this._toggleModeFields();
     this._updateStatus();
-    this.overlay.classList.add('open');
-    this.modal.classList.add('open');
   }
 
-  close() {
-    this.isOpen = false;
-    this.overlay.classList.remove('open');
-    this.modal.classList.remove('open');
+  _toggleModeFields() {
+    if (!this.modeSelect) return;
+    var mode = this.modeSelect.value;
+    if (this.tgFields) this.tgFields.style.display = mode === 'telegram' ? 'block' : 'none';
+    if (this.gwFields) this.gwFields.style.display = mode === 'gateway' ? 'block' : 'none';
+    if (this.orFields) this.orFields.style.display = mode === 'openrouter' ? 'block' : 'none';
+    if (this.gwApiFields) this.gwApiFields.style.display = mode === 'gateway-api' ? 'block' : 'none';
   }
 
   _updateStatus() {
-    const T = SettingsPanel.UI_TEXT;
-    const map = {
-      connected: T.statusConnected,
-      connecting: T.statusConnecting,
-      disconnected: T.statusDisconnected,
-    };
+    if (!this.statusEl) return;
+    var T = SettingsPanel.UI_TEXT;
+    var map = { connected: T.statusConnected, connecting: T.statusConnecting, disconnected: T.statusDisconnected };
     this.statusEl.textContent = map[this.cc.state] || T.statusDisconnected;
     this.statusEl.className = 'settings-status settings-status-' + this.cc.state;
   }
 
   async _testConnection() {
-    const T = SettingsPanel.UI_TEXT;
+    var T = SettingsPanel.UI_TEXT;
     this.testBtn.textContent = T.testing;
     this.testBtn.disabled = true;
 
-    let ok;
-    const mode = this.modeSelect.value;
+    var getVal = function(name) {
+      var el = this._containerEl.querySelector('.settings-input-' + name);
+      return el ? el.value : '';
+    }.bind(this);
+
+    var mode = this.modeSelect.value;
+    var ok;
     if (mode === 'telegram') {
-      ok = await this.cc.testConnection({ mode: 'telegram', tgToken: this.tgTokenInput.value });
+      ok = await this.cc.testConnection({ mode: 'telegram', tgToken: getVal('tg-token') });
     } else if (mode === 'openrouter') {
-      ok = await this.cc.testConnection({
-        mode: 'openrouter',
-        orApiKey: this.orApiKeyInput.value,
-        orModel: this.orModelInput.value || ChatClient.DEFAULTS.openRouterModel,
-      });
+      ok = await this.cc.testConnection({ mode: 'openrouter', orApiKey: getVal('or-api-key'), orModel: getVal('or-model') || ChatClient.DEFAULTS.openRouterModel });
     } else if (mode === 'gateway-api') {
-      ok = await this.cc.testConnection({
-        mode: 'gateway-api',
-        gwApiUrl: this.gwApiUrlInput.value,
-        gwApiToken: this.gwApiTokenInput.value,
-        gwApiModel: this.gwApiModelInput.value || ChatClient.DEFAULTS.gwApiModel,
-      });
+      ok = await this.cc.testConnection({ mode: 'gateway-api', gwApiUrl: getVal('gw-api-url'), gwApiToken: getVal('gw-api-token'), gwApiModel: getVal('gw-api-model') || ChatClient.DEFAULTS.gwApiModel });
     } else {
-      ok = await this.cc.testConnection({ mode: 'gateway', url: this.urlInput.value, token: this.tokenInput.value });
+      ok = await this.cc.testConnection({ mode: 'gateway', url: getVal('url'), token: getVal('token') });
     }
 
     this.testBtn.textContent = ok ? T.testOk : T.testFail;
@@ -338,23 +350,47 @@ class SettingsPanel {
     setTimeout(() => { this.testBtn.textContent = SettingsPanel.UI_TEXT.testBtn; }, 2000);
   }
 
-  _save() {
-    I18n.setLang(this.langSelect.value);
+  _saveConnection() {
+    var getVal = function(name) {
+      var el = this._containerEl.querySelector('.settings-input-' + name);
+      return el ? el.value : '';
+    }.bind(this);
 
     this.cc.disconnect();
     this.cc.saveSettings({
       mode: this.modeSelect.value,
-      url: this.urlInput.value,
-      token: this.tokenInput.value,
-      tgToken: this.tgTokenInput.value,
-      tgChatId: this.tgChatIdInput.value,
-      orApiKey: this.orApiKeyInput.value,
-      orModel: this.orModelInput.value || ChatClient.DEFAULTS.openRouterModel,
-      gwApiUrl: this.gwApiUrlInput.value,
-      gwApiToken: this.gwApiTokenInput.value,
-      gwApiModel: this.gwApiModelInput.value || ChatClient.DEFAULTS.gwApiModel,
+      url: getVal('url'),
+      token: getVal('token'),
+      tgToken: getVal('tg-token'),
+      tgChatId: getVal('tg-chat-id'),
+      orApiKey: getVal('or-api-key'),
+      orModel: getVal('or-model') || ChatClient.DEFAULTS.openRouterModel,
+      gwApiUrl: getVal('gw-api-url'),
+      gwApiToken: getVal('gw-api-token'),
+      gwApiModel: getVal('gw-api-model') || ChatClient.DEFAULTS.gwApiModel,
     });
     this.cc.connect();
-    this.close();
+    this._updateStatus();
   }
+
+  _saveLang() {
+    if (this.langSelect) I18n.setLang(this.langSelect.value);
+  }
+
+  _saveTheme() {
+    if (this.themeSelect) {
+      var target = this.themeSelect.value;
+      if (ThemePalette._current !== target) ThemePalette.toggle();
+    }
+  }
+
+  _rebuild() {
+    var activeTab = this._activeTab;
+    this._build();
+    this._switchTab(activeTab);
+  }
+
+  // Legacy compat: open/close (no-op since now inline)
+  open() { /* Navigate to settings route instead */ }
+  close() { /* No-op */ }
 }

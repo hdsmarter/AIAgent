@@ -1,8 +1,9 @@
 /**
- * app.js — Orchestrator (Enterprise Dashboard v3)
- * AuthGate + I18n + ThemePalette + OfficeScene + ViewManager + AgentSidebar
- * + StatusFetcher + ChatClient + ChatPanel + Notifications + SettingsPanel
- * Streaming wiring for OpenRouter / Gateway API SSE
+ * app.js — Orchestrator (Enterprise Dashboard v4 — SaaS architecture)
+ * Wires: AuthGate + I18n + ThemePalette + NavSidebar + ViewManager
+ *        + DashboardView + OfficeScene + ChatPanel + SettingsPanel
+ *        + StatusFetcher + ChatClient + Notifications
+ * Routes: #/dashboard, #/agents, #/chat, #/office, #/settings
  */
 (function () {
   // Initialize i18n + theme (needed for auth gate UI)
@@ -12,143 +13,188 @@
   // Auth gate — blocks until authenticated, then initializes app
   AuthGate.guard(function initApp() {
 
-  // Theme toggle button
-  var themeBtn = document.getElementById('theme-btn');
-  if (themeBtn) {
-    themeBtn.textContent = ThemePalette._current === 'light' ? '\u2600' : '\uD83C\uDF19';
-    themeBtn.setAttribute('aria-label', I18n.t('app.themeToggle'));
-    themeBtn.addEventListener('click', function() {
-      ThemePalette.toggle();
-      themeBtn.textContent = ThemePalette._current === 'light' ? '\u2600' : '\uD83C\uDF19';
-    });
-  }
-
-  // Core modules
+  // ── Core modules ─────────────────────────────
   var office = new OfficeScene('office');
   var fetcher = new StatusFetcher();
   var cc = new ChatClient();
   var notify = new Notifications();
   var chat = new ChatPanel();
   var settings = new SettingsPanel(cc);
-  var viewMgr = new ViewManager(document.getElementById('main-content'));
-  var sidebar = new AgentSidebar();
+  var viewMgr = new ViewManager();
+  var navSidebar = new NavSidebar();
+  var dashView = new DashboardView(document.getElementById('view-dashboard'));
 
-  // Initialize ViewManager with OfficeScene
+  // ── Theme toggle (SVG sun/moon swap) ─────────
+  var themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) {
+    _syncThemeIcon();
+    themeBtn.setAttribute('aria-label', I18n.t('app.themeToggle'));
+    themeBtn.addEventListener('click', function() {
+      ThemePalette.toggle();
+      _syncThemeIcon();
+    });
+  }
+
+  function _syncThemeIcon() {
+    if (!themeBtn) return;
+    var isDark = ThemePalette._current === 'dark';
+    var sun = themeBtn.querySelector('.icon-sun');
+    var moon = themeBtn.querySelector('.icon-moon');
+    if (sun) sun.style.display = isDark ? 'none' : '';
+    if (moon) moon.style.display = isDark ? '' : 'none';
+  }
+
+  // ── Register Views ───────────────────────────
+  viewMgr.registerView('dashboard', {
+    containerEl: document.getElementById('view-dashboard'),
+    breadcrumb: I18n.t('nav.dashboard'),
+    onInit: function() {
+      dashView.init();
+    },
+    onShow: function() {
+      dashView._updateGreeting();
+    },
+  });
+
+  viewMgr.registerView('agents', {
+    containerEl: document.getElementById('view-agents'),
+    breadcrumb: I18n.t('nav.agentOverview'),
+    onInit: function() {
+      viewMgr.setAgents(office.agents);
+      var container = document.getElementById('view-agents');
+      // Build toolbar + cards
+      var toolbar = document.createElement('div');
+      toolbar.className = 'agents-toolbar';
+      container.appendChild(toolbar);
+      var grid = document.createElement('div');
+      grid.className = 'agents-grid';
+      container.appendChild(grid);
+      viewMgr.buildAgentCards(grid, toolbar);
+    },
+  });
+
+  viewMgr.registerView('chat', {
+    containerEl: document.getElementById('view-chat'),
+    breadcrumb: I18n.t('nav.conversation'),
+    onInit: function() {
+      chat.init(office.agents);
+    },
+    onShow: function(opts) {
+      // If navigating with agentId, open that agent
+      if (opts && opts.agentId !== undefined) {
+        var agentId = parseInt(opts.agentId, 10);
+        var agent = office.agents.find(function(a) { return a.id === agentId; });
+        if (agent) selectAgent(agent);
+      }
+    },
+  });
+
+  viewMgr.registerView('office', {
+    containerEl: document.getElementById('view-office'),
+    breadcrumb: I18n.t('nav.office'),
+    onShow: function() {
+      office.resize();
+    },
+  });
+
+  viewMgr.registerView('settings', {
+    containerEl: document.getElementById('view-settings'),
+    breadcrumb: I18n.t('nav.settings'),
+    onInit: function(opts) {
+      settings.init(opts);
+    },
+    onShow: function(opts) {
+      settings.show(opts);
+    },
+  });
+
+  // ── Initialize ViewManager + OfficeScene data ─
   viewMgr.setOfficeScene(office);
   viewMgr.setAgents(office.agents);
-  viewMgr.showWorkspace(); // default view
 
-  // Initialize AgentSidebar
-  sidebar.setAgents(office.agents);
-
-  // ── Status bar ──────────────────────────────
-  function updateStatusBar(data) {
-    if (!data) return;
-
-    var setPill = function(id, label, ok) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = label;
-      el.className = 'status-pill ' + (ok === true ? 'ok' : ok === false ? 'err' : 'warn');
-    };
-
-    if (data.gateway) {
-      var gwOk = data.gateway.status === 'running' || data.gateway.status === 'ok' || data.gateway.ok === true;
-      var gwLabel = gwOk ? I18n.t('app.gwRunning') : I18n.t('app.gwOffline');
-      setPill('gw-pill', 'Gateway: ' + gwLabel, gwOk);
-    }
-
-    var channels = data.channels;
-    if (channels) {
-      var tgOk = null;
-      if (channels.telegram) {
-        if (typeof channels.telegram === 'object' && channels.telegram.running !== undefined) {
-          tgOk = channels.telegram.running;
-        } else if (channels.telegram.status) {
-          tgOk = channels.telegram.status === 'running' || channels.telegram.status === 'ok';
-        }
-      }
-      if (channels.channels && channels.channels.telegram) {
-        tgOk = channels.channels.telegram.running;
-      }
-      setPill('tg-pill', 'Telegram: ' + (tgOk ? 'Running' : tgOk === false ? 'Off' : '--'), tgOk);
-
-      var lineOk = null;
-      if (channels.line) {
-        if (typeof channels.line === 'object' && channels.line.running !== undefined) {
-          lineOk = channels.line.running;
-        } else if (channels.line.status) {
-          lineOk = channels.line.status === 'running' || channels.line.status === 'ok';
-        }
-      }
-      if (channels.channels && channels.channels.line) {
-        lineOk = channels.channels.line.running;
-      }
-      setPill('line-pill', 'LINE: ' + (lineOk ? 'Running' : lineOk === false ? 'Off' : '--'), lineOk);
-    }
-
-    if (data.version) {
-      document.title = '\u26A1 HD \u667A\u52D5\u5316 \u2014 ' + data.version;
-    }
-
-    var countEl = document.getElementById('agent-count');
-    if (countEl) countEl.textContent = office.agents.length + ' ' + I18n.t('app.agents');
-  }
-
-  // ── Clock ───────────────────────────────────
-  function updateClock() {
-    var el = document.getElementById('clock');
-    if (!el) return;
-    var now = new Date();
-    var h = String(now.getHours()).padStart(2, '0');
-    var m = String(now.getMinutes()).padStart(2, '0');
-    var s = String(now.getSeconds()).padStart(2, '0');
-    el.textContent = h + ':' + m + ':' + s;
-  }
-
-  // ── Agent selection (from sidebar, workspace, or office) ──
+  // ── Agent selection (unified) ────────────────
   function selectAgent(agent) {
     chat.open(agent);
     chat.setOffline(cc.state !== 'connected');
     chat.showTelegramFallback(cc.state !== 'connected' && cc.mode === 'telegram');
-    sidebar.setActiveAgent(agent.id);
     viewMgr.setActiveAgent(agent.id);
     office.selectedAgent = agent;
   }
 
-  // Wire sidebar → selectAgent
-  sidebar.onAgentSelect = function(agent) {
-    selectAgent(agent);
+  // Wire: NavSidebar → ViewManager navigation
+  navSidebar.onNavigate = function(route, params) {
+    viewMgr.navigate(route, params);
+    navSidebar.setActive(
+      params && params.tab ? 'settings-' + params.tab.replace('connection', 'conn') : route,
+      route
+    );
   };
 
-  // Wire workspace cards → selectAgent
+  // Wire: Dashboard quick actions → routes
+  dashView.onQuickAction = function(actionId, opts) {
+    switch (actionId) {
+      case 'chat':
+        viewMgr.navigate('chat');
+        navSidebar.setActive('chat', 'chat');
+        break;
+      case 'agents':
+        viewMgr.navigate('agents');
+        navSidebar.setActive('agents', 'agents');
+        break;
+      case 'office':
+        viewMgr.navigate('office');
+        navSidebar.setActive('office', 'office');
+        break;
+      case 'settings':
+        viewMgr.navigate('settings', { tab: 'connection' });
+        navSidebar.setActive('settings-conn', 'settings');
+        break;
+      case 'chat-agent':
+        if (opts && opts.agentId !== undefined) {
+          viewMgr.navigate('chat', { agentId: opts.agentId });
+          navSidebar.setActive('chat', 'chat');
+        }
+        break;
+    }
+  };
+
+  // Wire: Agent cards → chat
   viewMgr.onAgentClick = function(agent) {
-    selectAgent(agent);
+    viewMgr.navigate('chat', { agentId: agent.id });
+    navSidebar.setActive('chat', 'chat');
   };
 
-  // Wire office scene click → selectAgent
+  viewMgr.onAgentChat = function(agent) {
+    viewMgr.navigate('chat', { agentId: agent.id });
+    navSidebar.setActive('chat', 'chat');
+  };
+
+  // Wire: Office scene click → chat
   office.onAgentClick = function(agent) {
+    viewMgr.navigate('chat', { agentId: agent.id });
+    navSidebar.setActive('chat', 'chat');
     selectAgent(agent);
   };
 
-  // ── Wiring: ChatPanel -> ChatClient ──────────
+  // ── Wiring: ChatPanel → ChatClient ───────────
   chat.onSend = function(agentId, text) {
     return cc.sendChat(agentId, text);
   };
 
-  // ── Wiring: ChatClient events ─────────────
+  // ── Wiring: ChatClient events ────────────────
   var _lastNotifiedState = 'disconnected';
 
   cc.addEventListener('connected', function() {
     _lastNotifiedState = 'connected';
-    notify.success('\u2705 ' + I18n.t('app.connected'));
+    notify.success(I18n.t('app.connected'));
     chat.setOffline(false);
     chat.showTelegramFallback(false);
+    dashView.addActivity('Gateway ' + I18n.t('app.gwRunning'));
   });
 
   cc.addEventListener('disconnected', function() {
     if (_lastNotifiedState === 'connected') {
-      notify.warning('\u26A0\uFE0F ' + I18n.t('app.disconnected'));
+      notify.warning(I18n.t('app.disconnected'));
     }
     _lastNotifiedState = 'disconnected';
     chat.setOffline(true);
@@ -167,7 +213,7 @@
       chat.updateLastAgentMessage(d.text);
       office.updateAgentStatus(d.agentId, 'active');
       viewMgr.updateAgentStatus(d.agentId, 'active');
-      sidebar.updateAgentStatus(d.agentId, 'active');
+      chat.updateAgentStatus(d.agentId, 'active');
       return;
     }
 
@@ -181,10 +227,14 @@
       }
       office.showAgentSpeech(d.agentId, d.text);
       viewMgr.updateLastMessage(d.agentId, d.text);
+
+      // Add to dashboard recent chats
+      dashView.addRecentChat(d.agentId, d.text);
+
       setTimeout(function() {
         office.updateAgentStatus(d.agentId, 'idle');
         viewMgr.updateAgentStatus(d.agentId, 'idle');
-        sidebar.updateAgentStatus(d.agentId, 'idle');
+        chat.updateAgentStatus(d.agentId, 'idle');
       }, 8000);
       return;
     }
@@ -206,11 +256,15 @@
       office.updateAgentStatus(agentId, 'active', text.length > 20 ? text.slice(0, 20) : text);
       viewMgr.updateLastMessage(agentId, text);
       viewMgr.updateAgentStatus(agentId, 'active');
-      sidebar.updateAgentStatus(agentId, 'active');
+      chat.updateAgentStatus(agentId, 'active');
+
+      // Add to dashboard recent chats
+      dashView.addRecentChat(agentId, text);
+
       setTimeout(function() {
         office.updateAgentStatus(agentId, 'idle');
         viewMgr.updateAgentStatus(agentId, 'idle');
-        sidebar.updateAgentStatus(agentId, 'idle');
+        chat.updateAgentStatus(agentId, 'idle');
       }, 8000);
       return;
     }
@@ -221,72 +275,115 @@
     }
   });
 
-  // ── Settings gear button ────────────────────
-  var gearBtn = document.getElementById('settings-btn');
-  if (gearBtn) {
-    gearBtn.addEventListener('click', function() { settings.open(); });
+  // ── Status Fetcher → Dashboard + Sidebar ─────
+  function updateStatus(data) {
+    if (!data) return;
+
+    // Update dashboard stat cards
+    dashView.updateStatus(data);
+
+    // Update nav sidebar footer
+    var gwOk = false;
+    if (data.gateway) {
+      gwOk = data.gateway.status === 'running' || data.gateway.status === 'ok' || data.gateway.ok === true;
+    }
+    navSidebar.updateStats({
+      agentCount: office.agents.length,
+      gatewayOk: gwOk,
+    });
+
+    // Update page title
+    if (data.version) {
+      document.title = 'HD \u667A\u52D5\u5316 \u2014 ' + data.version;
+    }
   }
 
-  // ── i18n: update labels on lang change ──
-  I18n.onChange(function() {
-    var settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) settingsBtn.title = I18n.t('app.settings');
-    if (themeBtn) themeBtn.setAttribute('aria-label', I18n.t('app.themeToggle'));
-    var countEl = document.getElementById('agent-count');
-    if (countEl) countEl.textContent = office.agents.length + ' ' + I18n.t('app.agents');
+  // ── Clock (navbar) ───────────────────────────
+  function updateClock() {
+    var el = document.getElementById('clock');
+    if (!el) return;
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2, '0');
+    var m = String(now.getMinutes()).padStart(2, '0');
+    var s = String(now.getSeconds()).padStart(2, '0');
+    el.textContent = h + ':' + m + ':' + s;
+  }
+
+  // ── Cmd+K search shortcut ────────────────────
+  var searchInput = document.getElementById('navbar-search-input');
+  document.addEventListener('keydown', function(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      if (searchInput) searchInput.focus();
+    }
+    if (e.key === 'Escape' && searchInput && document.activeElement === searchInput) {
+      searchInput.blur();
+    }
   });
 
-  // ── Mobile navigation ──────────────────────
+  // ── Mobile bottom nav ────────────────────────
   var mobileNav = document.getElementById('mobile-nav');
   if (mobileNav) {
     var navBtns = mobileNav.querySelectorAll('.mobile-nav-btn');
-    var sidebarEl = document.getElementById('sidebar');
-    var mainContent = document.getElementById('main-content');
-    var chatSection = document.getElementById('chat-panel-section');
+    navBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var route = btn.dataset.route;
+        viewMgr.navigate(route);
 
-    function setMobileTab(tab) {
+        // Update active state
+        navBtns.forEach(function(b) {
+          var isActive = b.dataset.route === route;
+          b.classList.toggle('active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        // Also sync sidebar
+        navSidebar.setActive(route, route);
+      });
+    });
+  }
+
+  // ── ViewManager route change → sync mobile nav ──
+  viewMgr.onRouteChange = function(route) {
+    if (mobileNav) {
+      var navBtns = mobileNav.querySelectorAll('.mobile-nav-btn');
       navBtns.forEach(function(btn) {
-        var isActive = btn.dataset.tab === tab;
+        var isActive = btn.dataset.route === route;
         btn.classList.toggle('active', isActive);
         btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
-
-      if (sidebarEl) {
-        sidebarEl.classList.toggle('mobile-active', tab === 'agents');
-      }
-      if (mainContent) {
-        mainContent.classList.toggle('mobile-active', tab === 'workspace');
-      }
-      if (chatSection) {
-        chatSection.classList.toggle('mobile-active', tab === 'chat');
-      }
     }
+  };
 
-    navBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        setMobileTab(btn.dataset.tab);
-      });
-    });
+  // ── i18n: update labels on lang change ───────
+  I18n.onChange(function() {
+    if (themeBtn) themeBtn.setAttribute('aria-label', I18n.t('app.themeToggle'));
+    // Search placeholder
+    if (searchInput) searchInput.placeholder = I18n.t('nav.searchPlaceholder');
+  });
 
-    // Default mobile tab
-    setMobileTab('agents');
-  }
-
-  // ── OfficeScene resize on view toggle ──────
+  // ── OfficeScene resize on view toggle ────────
   window.addEventListener('resize', function() {
-    if (viewMgr.view === 'office') {
+    if (viewMgr.currentRoute === 'office') {
       office.resize();
     }
   });
 
-  // ── Initialize ──────────────────────────────
-  fetcher.onChange(updateStatusBar);
+  // ── Initialize ────────────────────────────────
+  fetcher.onChange(updateStatus);
   fetcher.startPolling();
   office.start();
   cc.connect();
 
   updateClock();
   setInterval(updateClock, 1000);
+
+  // Route from hash or default to dashboard
+  viewMgr.initFromHash();
+
+  // Sync sidebar active state to initial route
+  var initialRoute = viewMgr.currentRoute || 'dashboard';
+  navSidebar.setActive(initialRoute, initialRoute);
 
   }); // end AuthGate.guard
 })();
