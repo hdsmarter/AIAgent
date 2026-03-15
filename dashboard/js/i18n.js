@@ -21,7 +21,7 @@ const I18n = {
 
     // ── Chat Panel ──────────────────────────────
     'chat.title':        { 'zh-TW': '\u5C0D\u8A71',           'zh-CN': '\u5BF9\u8BDD',            en: 'Chat' },
-    'chat.placeholder':  { 'zh-TW': '\u8F38\u5165\u8A0A\u606F...',    'zh-CN': '\u8F93\u5165\u6D88\u606F...',     en: 'Type a message...' },
+    'chat.placeholder':  { 'zh-TW': '\u8F38\u5165\u8A0A\u606F\u2026 (Shift+Enter \u63DB\u884C)', 'zh-CN': '\u8F93\u5165\u6D88\u606F\u2026 (Shift+Enter \u6362\u884C)', en: 'Type message\u2026 (Shift+Enter for newline)' },
     'chat.send':         { 'zh-TW': '\u767C\u9001',           'zh-CN': '\u53D1\u9001',            en: 'Send' },
     'chat.offline':      { 'zh-TW': '\u96E2\u7DDA\u6A21\u5F0F \u2014 \u672A\u9023\u7DDA', 'zh-CN': '\u79BB\u7EBF\u6A21\u5F0F \u2014 \u672A\u8FDE\u7EBF', en: 'Offline \u2014 not connected' },
     'chat.typing':       { 'zh-TW': '\u601D\u8003\u4E2D...',      'zh-CN': '\u601D\u8003\u4E2D...',       en: 'Thinking...' },
@@ -30,6 +30,15 @@ const I18n = {
     'chat.noAgent':      { 'zh-TW': '\u8ACB\u9EDE\u64CA Agent \u958B\u59CB\u5C0D\u8A71', 'zh-CN': '\u8BF7\u70B9\u51FB Agent \u5F00\u59CB\u5BF9\u8BDD', en: 'Click an Agent to start chatting' },
     'chat.sendFail':     { 'zh-TW': '\u7121\u6CD5\u50B3\u9001\uFF0C\u672A\u9023\u7DDA', 'zh-CN': '\u65E0\u6CD5\u53D1\u9001\uFF0C\u672A\u8FDE\u7EBF', en: 'Cannot send, not connected' },
     'chat.openTelegram': { 'zh-TW': '\u5728 Telegram \u958B\u555F\u5C0D\u8A71', 'zh-CN': '\u5728 Telegram \u6253\u5F00\u5BF9\u8BDD', en: 'Open chat in Telegram' },
+    'chat.upload':       { 'zh-TW': '\u4E0A\u50B3\u6A94\u6848',       'zh-CN': '\u4E0A\u4F20\u6587\u4EF6',       en: 'Upload file' },
+    'chat.download':     { 'zh-TW': '\u4E0B\u8F09\u5C0D\u8A71',       'zh-CN': '\u4E0B\u8F7D\u5BF9\u8BDD',       en: 'Download' },
+    'chat.retry':        { 'zh-TW': '\u91CD\u8A66',           'zh-CN': '\u91CD\u8BD5',            en: 'Retry' },
+    'chat.fileTooLarge': { 'zh-TW': '\u6A94\u6848\u8D85\u904E 5MB \u9650\u5236', 'zh-CN': '\u6587\u4EF6\u8D85\u8FC7 5MB \u9650\u5236', en: 'File exceeds 5MB limit' },
+    'chat.emptyMsg':     { 'zh-TW': '\u8ACB\u8F38\u5165\u8A0A\u606F',       'zh-CN': '\u8BF7\u8F93\u5165\u6D88\u606F',       en: 'Please enter a message' },
+    'chat.downloadFmt':  { 'zh-TW': '\u532F\u51FA\u683C\u5F0F',       'zh-CN': '\u5BFC\u51FA\u683C\u5F0F',       en: 'Export format' },
+    'chat.charCount':    { 'zh-TW': '\u5B57\u5143',           'zh-CN': '\u5B57\u7B26',            en: 'characters' },
+    'chat.sending':      { 'zh-TW': '\u767C\u9001\u4E2D\u2026',       'zh-CN': '\u53D1\u9001\u4E2D\u2026',       en: 'Sending\u2026' },
+    'chat.shiftEnter':   { 'zh-TW': 'Shift+Enter \u63DB\u884C', 'zh-CN': 'Shift+Enter \u6362\u884C', en: 'Shift+Enter for newline' },
 
     // ── Settings Panel ──────────────────────────
     'settings.title':          { 'zh-TW': '\u8A2D\u5B9A',           'zh-CN': '\u8BBE\u7F6E',           en: 'Settings' },
@@ -74,6 +83,15 @@ const I18n = {
     'app.themeDark':    { 'zh-TW': '\u6DF1\u8272\u4E3B\u984C',        'zh-CN': '\u6DF1\u8272\u4E3B\u9898',       en: 'Dark Theme' },
     'app.themeToggle':  { 'zh-TW': '\u5207\u63DB\u4E3B\u984C',        'zh-CN': '\u5207\u6362\u4E3B\u9898',       en: 'Toggle Theme' },
     'app.agentList':    { 'zh-TW': 'Agent \u5217\u8868',     'zh-CN': 'Agent \u5217\u8868',     en: 'Agent List' },
+
+    // ── Sidebar + Views ───────────────────────────
+    'sidebar.title':    { 'zh-TW': 'AI \u52A9\u7406\u5718\u968A',     'zh-CN': 'AI \u52A9\u7406\u56E2\u961F',     en: 'AI Agent Team' },
+    'sidebar.search':   { 'zh-TW': '\u641C\u5C0B\u52A9\u7406\u2026',       'zh-CN': '\u641C\u7D22\u52A9\u7406\u2026',       en: 'Search agents\u2026' },
+    'view.workspace':   { 'zh-TW': '\u5DE5\u4F5C\u5340',         'zh-CN': '\u5DE5\u4F5C\u533A',         en: 'Workspace' },
+    'view.office':      { 'zh-TW': '\u8FA6\u516C\u5BA4',         'zh-CN': '\u529E\u516C\u5BA4',         en: 'Office' },
+    'workspace.lastMsg':  { 'zh-TW': '\u6700\u5F8C\u8A0A\u606F',     'zh-CN': '\u6700\u540E\u6D88\u606F',     en: 'Last message' },
+    'workspace.noChat':   { 'zh-TW': '\u5C1A\u672A\u958B\u59CB\u5C0D\u8A71', 'zh-CN': '\u5C1A\u672A\u5F00\u59CB\u5BF9\u8BDD', en: 'No conversation yet' },
+    'chat.offline2':      { 'zh-TW': '\u9023\u7DDA\u4E2D\u65B7\uFF0C\u8ACB\u6AA2\u67E5\u8A2D\u5B9A', 'zh-CN': '\u8FDE\u7EBF\u4E2D\u65AD\uFF0C\u8BF7\u68C0\u67E5\u8BBE\u7F6E', en: 'Disconnected, check settings' },
 
     // ── Office Scene — State Names ──────────────
     'state.type':  { 'zh-TW': '\u5DE5\u4F5C\u4E2D',   'zh-CN': '\u5DE5\u4F5C\u4E2D',   en: 'Working' },
