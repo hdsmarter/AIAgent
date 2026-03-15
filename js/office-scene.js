@@ -333,6 +333,9 @@ class OfficeScene {
 
     container.appendChild(this._overlay);
     this._updateOverlay();
+
+    // Re-render overlay text on language change
+    I18n.onChange(() => this._updateOverlay());
   }
 
   _updateOverlay() {
@@ -343,10 +346,8 @@ class OfficeScene {
       if (a.realStatus === 'active') responding++;
       else idle++;
     }
-    const rLabel = I18n.t('office.responding') || '\u4F4D\u52A9\u7406\u56DE\u61C9\u4E2D';
-    const iLabel = I18n.t('office.idle') || '\u4F4D\u5F85\u547D';
-    this._overlayResponding.textContent = '\u25CF ' + responding + ' ' + rLabel;
-    this._overlayIdle.textContent = '\u25CB ' + idle + ' ' + iLabel;
+    this._overlayResponding.textContent = '\u25CF ' + responding + ' ' + I18n.t('office.responding');
+    this._overlayIdle.textContent = '\u25CB ' + idle + ' ' + I18n.t('office.idle');
   }
 
   // ── Real-state driven status update ──────────────
@@ -594,15 +595,20 @@ class OfficeScene {
     const W = container ? container.clientWidth : window.innerWidth;
     const H = container ? container.clientHeight : window.innerHeight;
 
+    const officeW = this.cols * this.T;
+    const officeH = this.rows * this.T;
+
+    // Fill width first, then check if height fits
+    const scaleW = W / officeW;
+    const scaleH = H / officeH;
+    const baseScale = Math.max(scaleW, scaleH);
+
     this.canvas.width = W * dpr;
     this.canvas.height = H * dpr;
     this.canvas.style.width = W + 'px';
     this.canvas.style.height = H + 'px';
 
-    const officeW = this.cols * this.T;
-    const officeH = this.rows * this.T;
-
-    this.scale = Math.min(W / officeW, H / officeH) * dpr;
+    this.scale = baseScale * dpr;
     this.offsetX = (W * dpr - officeW * this.scale) / 2;
     this.offsetY = (H * dpr - officeH * this.scale) / 2;
   }
@@ -836,15 +842,25 @@ class OfficeScene {
     this.ctx.shadowColor = 'transparent';
     this.ctx.shadowBlur = 0;
 
-    // Enlarged name label (9px + semi-transparent pill for readability)
-    const name = I18n.agentName(agent.id);
-    this.ctx.font = 'bold 9px "Noto Sans TC", "PingFang TC", sans-serif';
-    const nameW = this.ctx.measureText(name).width + 6;
+    // Name label — truncate to max tile width to prevent overlap
+    const fullName = I18n.agentName(agent.id);
+    this.ctx.font = 'bold 8px "Noto Sans TC", "PingFang TC", sans-serif';
+    const maxLabelW = this.T * 1.8;  // max ~1.8 tiles wide
+    let name = fullName;
+    let nameW = this.ctx.measureText(name).width;
+    if (nameW > maxLabelW) {
+      while (name.length > 2 && this.ctx.measureText(name + '\u2026').width > maxLabelW) {
+        name = name.slice(0, -1);
+      }
+      name += '\u2026';
+      nameW = this.ctx.measureText(name).width;
+    }
+    const pillW = nameW + 6;
     this.ctx.fillStyle = p.namePillBg || 'rgba(255,255,255,0.6)';
-    this.ctx.fillRect(agent.x - nameW / 2, agent.y + 2, nameW, 13);
+    this.ctx.fillRect(agent.x - pillW / 2, agent.y + 2, pillW, 12);
     this.ctx.fillStyle = p.agentLabel;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(name, agent.x, agent.y + 12);
+    this.ctx.fillText(name, agent.x, agent.y + 11);
     this.ctx.textAlign = 'left';
   }
 
