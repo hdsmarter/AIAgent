@@ -405,6 +405,11 @@ class ChatClient extends EventTarget {
   _sendGatewayApi(agentId, text, fileAttachment) {
     if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
 
+    // Route file attachments through Responses API (Agent pipeline with tool calling)
+    if (fileAttachment) {
+      return this._sendGatewayResponses(agentId, text, fileAttachment);
+    }
+
     if (!this._gwApiHistory[agentId]) {
       this._gwApiHistory[agentId] = [];
     }
@@ -488,6 +493,150 @@ class ChatClient extends EventTarget {
     })
       .then(r => r.ok)
       .catch(() => false);
+  }
+
+  // ── Gateway Responses API (OpenClaw /v1/responses — Agent pipeline) ──
+
+  _sendGatewayResponses(agentId, text, fileAttachment) {
+    if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
+
+    // Build input array (OpenResponses format)
+    const input = [];
+
+    if (fileAttachment && !fileAttachment.isImage) {
+      // PDF/binary → input_file
+      const base64 = fileAttachment.dataUrl.split(',')[1];
+      input.push({
+        type: 'input_file',
+        filename: fileAttachment.name,
+        file_data: base64,
+      });
+    } else if (fileAttachment && fileAttachment.isImage) {
+      // Image → input_image
+      input.push({
+        type: 'input_image',
+        image_url: fileAttachment.dataUrl,
+      });
+    }
+
+    // Text message
+    input.push({
+      type: 'input_text',
+      text: text,
+    });
+
+    const systemPrompt = ChatClient.AGENT_SYSTEM_PROMPTS[agentId] || ChatClient.AGENT_SYSTEM_PROMPTS[0];
+
+    // Abort previous stream
+    if (this._gwApiAbort[agentId]) {
+      this._gwApiAbort[agentId].abort();
+    }
+    const controller = new AbortController();
+    this._gwApiAbort[agentId] = controller;
+
+    this.dispatchEvent(new CustomEvent('message', {
+      detail: { type: 'typing', agentId }
+    }));
+
+    fetch(this.gwApiUrl + '/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + this.gwApiToken,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({
+        model: this.gwApiModel,
+        instructions: systemPrompt,
+        input: input,
+        stream: true,
+      }),
+      signal: controller.signal,
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return this._readResponsesStream(response.body, agentId);
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') return;
+        this.dispatchEvent(new CustomEvent('message', {
+          detail: {
+            type: 'response',
+            agentId,
+            text: I18n.t('chat.sendFail') + ': ' + err.message,
+            final: true,
+          }
+        }));
+      })
+      .finally(() => {
+        delete this._gwApiAbort[agentId];
+      });
+
+    return true;
+  }
+
+  /**
+   * Read SSE stream from /v1/responses endpoint.
+   * Event format differs from chat/completions:
+   *   data: {"type":"response.output_text.delta","delta":"..."}
+   *   data: {"type":"response.output_text.done","text":"..."}
+   *   data: {"type":"response.completed",...}
+   * Falls back to chat/completions format if detected.
+   */
+  async _readResponsesStream(body, agentId) {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+
+            // OpenResponses format
+            if (parsed.type === 'response.output_text.delta' && parsed.delta) {
+              fullText += parsed.delta;
+              this.dispatchEvent(new CustomEvent('message', {
+                detail: { type: 'stream', agentId, text: fullText }
+              }));
+            }
+            // Fallback: chat/completions format (in case gateway proxies as such)
+            else if (parsed.choices && parsed.choices[0]?.delta?.content) {
+              fullText += parsed.choices[0].delta.content;
+              this.dispatchEvent(new CustomEvent('message', {
+                detail: { type: 'stream', agentId, text: fullText }
+              }));
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    this.dispatchEvent(new CustomEvent('message', {
+      detail: {
+        type: 'response',
+        agentId,
+        text: fullText || I18n.t('chat.sendFail'),
+        final: true,
+      }
+    }));
   }
 
   // ── Telegram Bot API ──────────────────────────

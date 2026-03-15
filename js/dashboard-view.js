@@ -76,42 +76,11 @@ class DashboardView {
     }
     this._el.appendChild(actions);
 
-    // ── Stat Cards ──────────────────────────────
-    var stats = document.createElement('div');
-    stats.className = 'dash-stats';
-
-    this._statCards = {};
-    var statItems = [
-      { id: 'agents', icon: SvgIcons.robot, labelKey: 'dash.agentCount', value: String(PixelSprites.agentPalettes.length), bg: 'var(--accent)' },
-    ];
-
-    for (var s = 0; s < statItems.length; s++) {
-      var si = statItems[s];
-      var card = document.createElement('div');
-      card.className = 'dash-stat-card';
-
-      var iconEl = document.createElement('div');
-      iconEl.className = 'dash-stat-icon';
-      iconEl.style.background = si.bg;
-      iconEl.appendChild(svgFromTemplate(si.icon));
-      card.appendChild(iconEl);
-
-      var info = document.createElement('div');
-      info.className = 'dash-stat-info';
-      var val = document.createElement('div');
-      val.className = 'dash-stat-value';
-      val.textContent = si.value;
-      var label = document.createElement('div');
-      label.className = 'dash-stat-label';
-      label.textContent = I18n.t(si.labelKey);
-      info.appendChild(val);
-      info.appendChild(label);
-      card.appendChild(info);
-
-      this._statCards[si.id] = { cardEl: card, valueEl: val, labelEl: label };
-      stats.appendChild(card);
-    }
-    this._el.appendChild(stats);
+    // ── Agent Carousel ──────────────────────────
+    this._carouselEl = document.createElement('div');
+    this._carouselEl.className = 'dash-carousel';
+    this._el.appendChild(this._carouselEl);
+    this._renderCarousel();
 
     // ── Panels ──────────────────────────────────
     var panels = document.createElement('div');
@@ -250,6 +219,117 @@ class DashboardView {
     while (this._activityBody.children.length > 10) {
       this._activityBody.removeChild(this._activityBody.lastChild);
     }
+  }
+
+  setAgents(agents) {
+    this._agents = agents;
+    if (this._carouselEl) this._renderCarousel();
+  }
+
+  _renderCarousel() {
+    if (!this._carouselEl) return;
+    this._carouselEl.textContent = '';
+
+    // Header row: title + nav arrows
+    var header = document.createElement('div');
+    header.className = 'dash-carousel-header';
+    var title = document.createElement('span');
+    title.className = 'dash-carousel-title';
+    title.textContent = I18n.t('dash.agentCount') || 'AI Agents';
+    header.appendChild(title);
+
+    var navWrap = document.createElement('div');
+    navWrap.className = 'dash-carousel-nav';
+    var btnL = document.createElement('button');
+    btnL.className = 'dash-carousel-arrow';
+    btnL.textContent = '\u2190';
+    btnL.setAttribute('aria-label', 'Scroll left');
+    var btnR = document.createElement('button');
+    btnR.className = 'dash-carousel-arrow';
+    btnR.textContent = '\u2192';
+    btnR.setAttribute('aria-label', 'Scroll right');
+    navWrap.appendChild(btnL);
+    navWrap.appendChild(btnR);
+    header.appendChild(navWrap);
+    this._carouselEl.appendChild(header);
+
+    // Track
+    var track = document.createElement('div');
+    track.className = 'dash-carousel-track';
+    this._carouselTrack = track;
+
+    var agents = this._agents || [];
+    for (var i = 0; i < agents.length; i++) {
+      track.appendChild(this._createCarouselCard(agents[i]));
+    }
+    this._carouselEl.appendChild(track);
+
+    // Arrow scroll
+    btnL.addEventListener('click', function() { track.scrollBy({ left: -240, behavior: 'smooth' }); });
+    btnR.addEventListener('click', function() { track.scrollBy({ left: 240, behavior: 'smooth' }); });
+  }
+
+  _createCarouselCard(agent) {
+    var palette = PixelSprites.agentPalettes[agent.id];
+    var color = palette ? palette.shirt : '#004896';
+    var lighten = this._lightenColor(color, 30);
+
+    var card = document.createElement('div');
+    card.className = 'dash-carousel-card';
+    card.setAttribute('role', 'article');
+    card.setAttribute('tabindex', '0');
+
+    // Gradient header
+    var hdr = document.createElement('div');
+    hdr.className = 'dash-carousel-card-header';
+    hdr.style.background = 'linear-gradient(135deg, ' + color + ' 0%, ' + lighten + ' 100%)';
+    var iconKey = AgentIconMap[agent.id] || 'robot';
+    var icon = svgFromTemplate(SvgIcons[iconKey]);
+    hdr.appendChild(icon);
+    card.appendChild(hdr);
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'dash-carousel-card-body';
+    var name = document.createElement('div');
+    name.className = 'dash-carousel-card-name';
+    name.textContent = I18n.agentName(agent.id);
+    body.appendChild(name);
+
+    var role = document.createElement('div');
+    role.className = 'dash-carousel-card-role';
+    role.textContent = I18n.agentRole(agent.id);
+    body.appendChild(role);
+
+    var chatBtn = document.createElement('button');
+    chatBtn.className = 'dash-carousel-chat-btn';
+    chatBtn.textContent = I18n.t('agents.startChat') || '\u958B\u59CB\u5C0D\u8A71';
+    chatBtn.addEventListener('click', (function(id) {
+      return function(e) {
+        e.stopPropagation();
+        if (this.onQuickAction) this.onQuickAction('chat-agent', { agentId: id });
+      }.bind(this);
+    }.bind(this))(agent.id));
+    body.appendChild(chatBtn);
+
+    card.appendChild(body);
+
+    // Card click → also open chat
+    card.addEventListener('click', (function(id) {
+      return function() {
+        if (this.onQuickAction) this.onQuickAction('chat-agent', { agentId: id });
+      }.bind(this);
+    }.bind(this))(agent.id));
+
+    return card;
+  }
+
+  _lightenColor(hex, percent) {
+    var num = parseInt(hex.replace('#', ''), 16);
+    var r = Math.min(255, (num >> 16) + Math.round(255 * percent / 100));
+    var g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round(255 * percent / 100));
+    var b = Math.min(255, (num & 0x0000FF) + Math.round(255 * percent / 100));
+    return '#' + (0x1000000 + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
   _rebuild() {

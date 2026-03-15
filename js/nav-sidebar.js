@@ -88,16 +88,18 @@ class NavSidebar {
     this._hamburgerBtn = document.getElementById('nav-hamburger');
     this._appShell = document.getElementById('app-shell');
 
-    this._collapsed = false;
+    this._collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
     this._activeRoute = 'dashboard';
     this.onNavigate = null;
 
+    // Restore collapsed state on load
+    if (this._collapsed && this._appShell) {
+      this._appShell.classList.add('sidebar-collapsed');
+    }
+
     this._menuConfig = [
       { id: 'dashboard', icon: 'home', labelKey: 'nav.dashboard', route: 'dashboard' },
-      { id: 'ai-group', icon: 'robot', labelKey: 'nav.aiAssistant', children: [
-        { id: 'agents', icon: 'list', labelKey: 'nav.agentOverview', route: 'agents' },
-        { id: 'chat', icon: 'chat', labelKey: 'nav.conversation', route: 'chat' },
-      ]},
+      { id: 'chat', icon: 'chat', labelKey: 'nav.aiAssistant', route: 'chat' },
       { id: 'office', icon: 'building', labelKey: 'nav.office', route: 'office' },
       { type: 'divider' },
       { id: 'settings-group', icon: 'gear', labelKey: 'nav.settings', children: [
@@ -274,12 +276,17 @@ class NavSidebar {
   }
 
   _bindHamburger() {
+    if (!this._hamburgerBtn) return;
     var self = this;
-    if (this._hamburgerBtn) {
-      this._hamburgerBtn.addEventListener('click', function() {
+    this._hamburgerBtn.addEventListener('click', function() {
+      // Desktop (>1024px): collapse sidebar
+      if (window.innerWidth > 1024) {
+        self.toggleCollapse();
+      } else {
+        // Tablet/mobile: slide-in drawer
         self._el.classList.toggle('open');
-      });
-    }
+      }
+    });
   }
 
   _bindOutsideClick() {
@@ -325,6 +332,9 @@ class NavSidebar {
     if (this._appShell) {
       this._appShell.classList.toggle('sidebar-collapsed', this._collapsed);
     }
+    localStorage.setItem('sidebar-collapsed', this._collapsed);
+    // Trigger resize after CSS transition completes for canvas reflow
+    setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 300);
   }
 
   updateStats(data) {

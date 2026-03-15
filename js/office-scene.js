@@ -3,7 +3,13 @@
  * Canvas 2D tile-based rendering, FSM agents, A* pathfinding
  * 28x18 grid: lobby, security, main office, factory, kitchen, meeting room
  * Zero hardcoded colors — all via ThemePalette
+ *
+ * v2.1: 2x character scaling, real-state FSM, 17 seats, tile cache
  */
+
+// Character draw size (2x sprite original for visibility)
+const DRAW_W = CHAR_W * 2;  // 32
+const DRAW_H = CHAR_H * 2;  // 48
 
 class OfficeScene {
   constructor(canvasId) {
@@ -32,11 +38,18 @@ class OfficeScene {
     // Walkable grid
     this.walkable = [];
 
+    // Tile cache (offscreen canvas for performance)
+    this._tileCache = null;
+    this._tileCacheTheme = null;
+
     // Build the office
     this.buildLayout();
     this.buildFurniture();
     this.buildWalkableGrid();
     this.spawnAgents();
+
+    // Build tile cache after layout
+    this._rebuildTileCache();
 
     // Resize handler
     this.resize();
@@ -48,6 +61,9 @@ class OfficeScene {
     this.hoveredAgent = null;
     this.selectedAgent = null;
     this.onAgentClick = null;
+
+    // Office overlay status bar
+    this._initOverlay();
 
     this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
     this.canvas.addEventListener('mouseleave', () => { this.hoveredAgent = null; });
@@ -170,6 +186,10 @@ class OfficeScene {
     f('chair', 16, 13, { zOff: T + 8 });
     f('chair', 19, 13, { zOff: T + 8 });
 
+    // ── PUE Business Asst. desk (seat #16) ─
+    f('desk', 22, 15); f('computer', 22, 14);
+    f('chair', 22, 16, { zOff: T + 8 });
+
     // Bookshelves along top wall of main office
     f('bookshelf', 8, 5, { zOff: 4 });
     f('bookshelf', 10, 5, { zOff: 4 });
@@ -203,7 +223,7 @@ class OfficeScene {
     f('plant', 1, 16);
     f('plant', 5, 16);
 
-    // ── Desk seats (16 agents) ──────────────────────
+    // ── Desk seats (17 agents) ──────────────────────
     this.seats = [
       // Main office — upper row (6 seats, row 3)
       { col: 9,  row: 3, dir: 'down' },  // #0 Data Analyst
@@ -224,6 +244,8 @@ class OfficeScene {
       { col: 13, row: 13, dir: 'down' }, // #13 Quality
       { col: 16, row: 13, dir: 'down' }, // #14 Security
       { col: 19, row: 13, dir: 'down' }, // #15 HR Director
+      // PUE Business Asst. (seat #16)
+      { col: 22, row: 16, dir: 'down' }, // #16 PUE Business Asst.
     ];
   }
 
@@ -271,7 +293,7 @@ class OfficeScene {
         y: seat.row * this.T + this.T / 2,
         col: seat.col,
         row: seat.row,
-        state: 'type',
+        state: 'working',
         dir: 'down',
         frame: Math.floor(Math.random() * 4),
         frameTimer: 0,
@@ -284,6 +306,7 @@ class OfficeScene {
         speech: null,
         speechTimer: 0,
         active: true,
+        _pendingRespond: false,
       };
       this.agents.push(agent);
     }
@@ -293,11 +316,88 @@ class OfficeScene {
     });
   }
 
+  // ── Office overlay (DOM status bar above canvas) ──
+  _initOverlay() {
+    const container = this.canvas.parentElement;
+    if (!container) return;
+    this._overlay = document.createElement('div');
+    this._overlay.className = 'office-overlay';
+
+    this._overlayResponding = document.createElement('span');
+    this._overlayResponding.className = 'status-indicator responding';
+    this._overlay.appendChild(this._overlayResponding);
+
+    this._overlayIdle = document.createElement('span');
+    this._overlayIdle.className = 'status-indicator idle';
+    this._overlay.appendChild(this._overlayIdle);
+
+    container.appendChild(this._overlay);
+    this._updateOverlay();
+  }
+
+  _updateOverlay() {
+    if (!this._overlay) return;
+    let responding = 0;
+    let idle = 0;
+    for (const a of this.agents) {
+      if (a.realStatus === 'active') responding++;
+      else idle++;
+    }
+    const rLabel = I18n.t('office.responding') || '\u4F4D\u52A9\u7406\u56DE\u61C9\u4E2D';
+    const iLabel = I18n.t('office.idle') || '\u4F4D\u5F85\u547D';
+    this._overlayResponding.textContent = '\u25CF ' + responding + ' ' + rLabel;
+    this._overlayIdle.textContent = '\u25CB ' + idle + ' ' + iLabel;
+  }
+
+  // ── Real-state driven status update ──────────────
   updateAgentStatus(agentId, status, task) {
     const agent = this.agents.find(a => a.id === agentId);
-    if (agent) {
-      agent.realStatus = status || 'idle';
-      agent.currentTask = task || null;
+    if (!agent) return;
+    const prev = agent.realStatus;
+    agent.realStatus = status || 'idle';
+    agent.currentTask = task || null;
+
+    if (agent.realStatus === 'active' && prev !== 'active') {
+      // Immediately switch to responding (interrupts any state)
+      this._goResponding(agent);
+    } else if (agent.realStatus === 'idle' && prev === 'active') {
+      // End responding → back to working
+      if (agent.state === 'responding') {
+        agent.state = 'working';
+        agent.dir = 'down';
+        agent.stateTimer = Math.random() * 8 + 4;
+      }
+    }
+    this._updateOverlay();
+  }
+
+  _goResponding(agent) {
+    const seat = this.seats[agent.seatIdx];
+    if (agent.col !== seat.col || agent.row !== seat.row) {
+      // Walk back to seat first
+      agent.path = this.findPath(agent.col, agent.row, seat.col, seat.row);
+      agent.pathIdx = 0;
+      agent.state = 'walk';
+      agent._pendingRespond = true;
+      agent.stateTimer = 30;
+    } else {
+      agent.state = 'responding';
+      agent.dir = 'down';
+      agent.stateTimer = 999; // Controlled by realStatus change
+    }
+  }
+
+  _returnToSeat(agent) {
+    const seat = this.seats[agent.seatIdx];
+    if (agent.col === seat.col && agent.row === seat.row) {
+      agent.state = 'working';
+      agent.dir = 'down';
+      agent.stateTimer = Math.random() * 10 + 5;
+    } else {
+      agent.path = this.findPath(agent.col, agent.row, seat.col, seat.row);
+      agent.pathIdx = 0;
+      agent.state = agent.path.length > 0 ? 'walk' : 'working';
+      agent.stateTimer = agent.state === 'walk' ? 20 : Math.random() * 8 + 4;
     }
   }
 
@@ -354,45 +454,55 @@ class OfficeScene {
     return [];
   }
 
-  // Update agent FSM
+  // ── FSM: real-state driven agent update ──────────
   updateAgent(agent, dt) {
     agent.frameTimer += dt;
-
-    const frameRate = agent.state === 'walk' ? 0.2 : 0.5;
-    if (agent.frameTimer >= frameRate) {
+    const rates = { walk: 0.2, working: 0.5, responding: 0.25, speaking: 0.6, idle: 0.8 };
+    if (agent.frameTimer >= (rates[agent.state] || 0.5)) {
       agent.frameTimer = 0;
       agent.frame++;
     }
 
     if (agent.speech) {
       agent.speechTimer -= dt;
-      if (agent.speechTimer <= 0) {
-        agent.speech = null;
-      }
+      if (agent.speechTimer <= 0) agent.speech = null;
     }
-
     agent.stateTimer -= dt;
 
     switch (agent.state) {
-      case 'type':
+      case 'working':
         if (agent.stateTimer <= 0) {
-          if (Math.random() < 0.3) {
+          if (agent.realStatus === 'active') { this._goResponding(agent); break; }
+          if (Math.random() < 0.2) {
             agent.speech = PixelSprites.speeches[Math.floor(Math.random() * PixelSprites.speeches.length)];
             agent.speechTimer = 3;
           }
           const r = Math.random();
-          if (r < 0.4) {
+          if (r < 0.25 && agent.realStatus === 'idle') {
+            // Random walk (only when idle)
             agent.state = 'walk';
             const target = this.randomWalkTarget(agent);
             agent.path = this.findPath(agent.col, agent.row, target.col, target.row);
             agent.pathIdx = 0;
             agent.stateTimer = 20;
-          } else if (r < 0.6) {
+          } else if (r < 0.35) {
             agent.state = 'idle';
             agent.stateTimer = Math.random() * 3 + 1;
           } else {
             agent.stateTimer = Math.random() * 8 + 4;
           }
+        }
+        break;
+
+      case 'responding':
+        // Continues until realStatus changes back to idle (controlled by updateAgentStatus)
+        break;
+
+      case 'speaking':
+        if (!agent.speech && agent.stateTimer <= 0) {
+          agent.state = agent.realStatus === 'active' ? 'responding' : 'working';
+          agent.dir = 'down';
+          agent.stateTimer = agent.state === 'responding' ? 999 : Math.random() * 8 + 4;
         }
         break;
 
@@ -421,41 +531,30 @@ class OfficeScene {
               agent.dir = dy > 0 ? 'down' : 'up';
             }
           }
-        } else {
-          if (agent.seatIdx !== undefined) {
+
+          // If realStatus becomes active mid-walk, reroute to seat
+          if (agent.realStatus === 'active' && !agent._pendingRespond) {
+            agent._pendingRespond = true;
             const seat = this.seats[agent.seatIdx];
-            if (agent.col === seat.col && agent.row === seat.row) {
-              agent.state = 'type';
-              agent.dir = 'down';
-              agent.stateTimer = Math.random() * 10 + 5;
-            } else {
-              agent.path = this.findPath(agent.col, agent.row, seat.col, seat.row);
-              agent.pathIdx = 0;
-              if (agent.path.length === 0) {
-                agent.state = 'idle';
-                agent.stateTimer = 2;
-              }
-            }
+            agent.path = this.findPath(agent.col, agent.row, seat.col, seat.row);
+            agent.pathIdx = 0;
+          }
+        } else {
+          if (agent._pendingRespond) {
+            agent._pendingRespond = false;
+            agent.state = 'responding';
+            agent.dir = 'down';
+            agent.stateTimer = 999;
           } else {
-            agent.state = 'idle';
-            agent.stateTimer = Math.random() * 3 + 1;
+            this._returnToSeat(agent);
           }
         }
         break;
 
       case 'idle':
         if (agent.stateTimer <= 0) {
-          const seat = this.seats[agent.seatIdx];
-          agent.path = this.findPath(agent.col, agent.row, seat.col, seat.row);
-          agent.pathIdx = 0;
-          agent.state = agent.path.length > 0 ? 'walk' : 'type';
-          agent.stateTimer = agent.state === 'walk' ? 20 : (Math.random() * 8 + 4);
-          agent.dir = 'down';
-
-          if (Math.random() < 0.5) {
-            agent.speech = PixelSprites.speeches[Math.floor(Math.random() * PixelSprites.speeches.length)];
-            agent.speechTimer = 3.5;
-          }
+          if (agent.realStatus === 'active') { this._goResponding(agent); }
+          else { this._returnToSeat(agent); }
         }
         break;
     }
@@ -472,6 +571,19 @@ class OfficeScene {
     }
     if (candidates.length === 0) return { col: agent.col, row: agent.row };
     return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  showAgentSpeech(agentId, text) {
+    const agent = this.agents.find(a => a.id === agentId);
+    if (!agent) return;
+    agent.speech = text.length > 30 ? text.slice(0, 30) + '\u2026' : text;
+    agent.speechTimer = 5;
+    // Only switch to speaking if not responding
+    if (agent.state !== 'responding') {
+      agent.state = 'speaking';
+      agent.dir = 'down';
+      agent.stateTimer = 5;
+    }
   }
 
   resize() {
@@ -497,18 +609,19 @@ class OfficeScene {
 
   onMouseMove(e) {
     const dpr = window.devicePixelRatio || 1;
-    const canvasX = (e.clientX * dpr - this.offsetX) / this.scale;
-    const canvasY = (e.clientY * dpr - this.offsetY) / this.scale;
+    const rect = this.canvas.getBoundingClientRect();
+    const canvasX = ((e.clientX - rect.left) * dpr - this.offsetX) / this.scale;
+    const canvasY = ((e.clientY - rect.top) * dpr - this.offsetY) / this.scale;
 
     this.mouseX = e.clientX;
     this.mouseY = e.clientY;
     this.hoveredAgent = null;
 
     for (const agent of this.agents) {
-      const ax = agent.x - CHAR_W / 2;
-      const ay = agent.y - CHAR_H;
-      if (canvasX >= ax && canvasX <= ax + CHAR_W &&
-          canvasY >= ay && canvasY <= ay + CHAR_H) {
+      const ax = agent.x - DRAW_W / 2;
+      const ay = agent.y - DRAW_H;
+      if (canvasX >= ax && canvasX <= ax + DRAW_W &&
+          canvasY >= ay && canvasY <= ay + DRAW_H) {
         this.hoveredAgent = agent;
         break;
       }
@@ -532,16 +645,17 @@ class OfficeScene {
 
   onTap(clientX, clientY) {
     const dpr = window.devicePixelRatio || 1;
-    const canvasX = (clientX * dpr - this.offsetX) / this.scale;
-    const canvasY = (clientY * dpr - this.offsetY) / this.scale;
+    const rect = this.canvas.getBoundingClientRect();
+    const canvasX = ((clientX - rect.left) * dpr - this.offsetX) / this.scale;
+    const canvasY = ((clientY - rect.top) * dpr - this.offsetY) / this.scale;
     const hitPad = 8;
 
     let tapped = null;
     for (const agent of this.agents) {
-      const ax = agent.x - CHAR_W / 2 - hitPad;
-      const ay = agent.y - CHAR_H - hitPad;
-      const aw = CHAR_W + hitPad * 2;
-      const ah = CHAR_H + hitPad * 2;
+      const ax = agent.x - DRAW_W / 2 - hitPad;
+      const ay = agent.y - DRAW_H - hitPad;
+      const aw = DRAW_W + hitPad * 2;
+      const ah = DRAW_H + hitPad * 2;
       if (canvasX >= ax && canvasX <= ax + aw &&
           canvasY >= ay && canvasY <= ay + ah) {
         tapped = agent;
@@ -557,19 +671,40 @@ class OfficeScene {
     }
   }
 
-  showAgentSpeech(agentId, text) {
-    const agent = this.agents.find(a => a.id === agentId);
-    if (agent) {
-      agent.speech = text.length > 20 ? text.slice(0, 20) + '\u2026' : text;
-      agent.speechTimer = 4;
-    }
-  }
-
   update(dt) {
     this.frame++;
     for (const agent of this.agents) {
       this.updateAgent(agent, dt);
     }
+  }
+
+  // ── Tile cache (offscreen canvas, rebuilt on theme change) ──
+  _rebuildTileCache() {
+    const T = this.T;
+    const cacheCanvas = document.createElement('canvas');
+    cacheCanvas.width = this.cols * T;
+    cacheCanvas.height = this.rows * T;
+    const cctx = cacheCanvas.getContext('2d');
+
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const x = c * T;
+        const y = r * T;
+        switch (this.map[r][c]) {
+          case 0: PixelSprites.drawFloorTile(cctx, x, y, (r * 7 + c) % 3); break;
+          case 1: PixelSprites.drawWallTile(cctx, x, y); break;
+          case 2: PixelSprites.drawKitchenFloor(cctx, x, y); break;
+          case 3: PixelSprites.drawCarpetTile(cctx, x, y); break;
+          case 4: PixelSprites.drawLobbyFloor(cctx, x, y); break;
+          case 5: PixelSprites.drawFactoryFloor(cctx, x, y); break;
+          case 6: PixelSprites.drawCorridorFloor(cctx, x, y); break;
+          case 7: PixelSprites.drawGlassWall(cctx, x, y); break;
+        }
+      }
+    }
+
+    this._tileCache = cacheCanvas;
+    this._tileCacheTheme = ThemePalette._current;
   }
 
   render() {
@@ -586,22 +721,12 @@ class OfficeScene {
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
 
-    // 1. Draw tiles
-    for (let r = 0; r < this.rows; r++) {
-      for (let c = 0; c < this.cols; c++) {
-        const x = c * T;
-        const y = r * T;
-        switch (this.map[r][c]) {
-          case 0: PixelSprites.drawFloorTile(ctx, x, y, (r * 7 + c) % 3); break;
-          case 1: PixelSprites.drawWallTile(ctx, x, y); break;
-          case 2: PixelSprites.drawKitchenFloor(ctx, x, y); break;
-          case 3: PixelSprites.drawCarpetTile(ctx, x, y); break;
-          case 4: PixelSprites.drawLobbyFloor(ctx, x, y); break;
-          case 5: PixelSprites.drawFactoryFloor(ctx, x, y); break;
-          case 6: PixelSprites.drawCorridorFloor(ctx, x, y); break;
-          case 7: PixelSprites.drawGlassWall(ctx, x, y); break;
-        }
-      }
+    // 1. Draw tiles (from cache, rebuild on theme change)
+    if (this._tileCacheTheme !== ThemePalette._current) {
+      this._rebuildTileCache();
+    }
+    if (this._tileCache) {
+      ctx.drawImage(this._tileCache, 0, 0);
     }
 
     // 2. Collect renderables for z-sorting
@@ -626,7 +751,7 @@ class OfficeScene {
     // 4. Speech bubbles (always on top)
     for (const agent of this.agents) {
       if (agent.speech) {
-        PixelSprites.drawBubble(ctx, agent.x, agent.y - CHAR_H - 4, agent.speech);
+        PixelSprites.drawBubble(ctx, agent.x, agent.y - DRAW_H - 4, agent.speech);
       }
     }
 
@@ -636,14 +761,14 @@ class OfficeScene {
       const glow = 0.3 + 0.3 * Math.sin(Date.now() / 400);
       ctx.strokeStyle = p.selectGlow + glow + ')';
       ctx.lineWidth = 2;
-      ctx.strokeRect(a.x - CHAR_W / 2 - 3, a.y - CHAR_H - 3, CHAR_W + 6, CHAR_H + 8);
+      ctx.strokeRect(a.x - DRAW_W / 2 - 3, a.y - DRAW_H - 3, DRAW_W + 6, DRAW_H + 8);
     }
 
     // 6. Hovered agent highlight
     if (this.hoveredAgent && this.hoveredAgent !== this.selectedAgent) {
       ctx.strokeStyle = p.hoverGlow;
       ctx.lineWidth = 1;
-      ctx.strokeRect(this.hoveredAgent.x - CHAR_W / 2 - 2, this.hoveredAgent.y - CHAR_H - 2, CHAR_W + 4, CHAR_H + 6);
+      ctx.strokeRect(this.hoveredAgent.x - DRAW_W / 2 - 2, this.hoveredAgent.y - DRAW_H - 2, DRAW_W + 4, DRAW_H + 6);
     }
 
     ctx.restore();
@@ -690,17 +815,36 @@ class OfficeScene {
 
   renderAgent(agent) {
     const p = ThemePalette.current;
+    // Map FSM state to sprite animation
+    const spriteState = (agent.state === 'walk') ? 'walk'
+      : (agent.state === 'idle') ? 'idle' : 'type';
     const spriteCanvas = PixelSprites.drawCharacter(
-      agent.palette, agent.dir, agent.frame, agent.state
+      agent.palette, agent.dir, agent.frame, spriteState
     );
-    const dx = agent.x - CHAR_W / 2;
-    const dy = agent.y - CHAR_H;
-    this.ctx.drawImage(spriteCanvas, dx, dy, CHAR_W, CHAR_H);
+    const dx = agent.x - DRAW_W / 2;
+    const dy = agent.y - DRAW_H;
 
-    this.ctx.font = '5px sans-serif';
+    // Responding state: green glow effect
+    if (agent.state === 'responding') {
+      const glow = 0.3 + 0.2 * Math.sin(Date.now() / 300);
+      this.ctx.shadowColor = 'rgba(22, 163, 74, ' + glow + ')';
+      this.ctx.shadowBlur = 12;
+    }
+
+    // 2x scaled draw (image-smoothing disabled = pixel-perfect)
+    this.ctx.drawImage(spriteCanvas, dx, dy, DRAW_W, DRAW_H);
+    this.ctx.shadowColor = 'transparent';
+    this.ctx.shadowBlur = 0;
+
+    // Enlarged name label (9px + semi-transparent pill for readability)
+    const name = I18n.agentName(agent.id);
+    this.ctx.font = 'bold 9px "Noto Sans TC", "PingFang TC", sans-serif';
+    const nameW = this.ctx.measureText(name).width + 6;
+    this.ctx.fillStyle = p.namePillBg || 'rgba(255,255,255,0.6)';
+    this.ctx.fillRect(agent.x - nameW / 2, agent.y + 2, nameW, 13);
     this.ctx.fillStyle = p.agentLabel;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(I18n.agentName(agent.id), agent.x, agent.y + 6);
+    this.ctx.fillText(name, agent.x, agent.y + 12);
     this.ctx.textAlign = 'left';
   }
 

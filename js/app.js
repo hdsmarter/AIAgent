@@ -14,7 +14,7 @@
   AuthGate.guard(function initApp() {
 
   // ── Core modules ─────────────────────────────
-  var office = new OfficeSceneV2('office-scene-v2');
+  var office = new OfficeScene('office');
   var fetcher = new StatusFetcher();
   var cc = new ChatClient();
   var notify = new Notifications();
@@ -50,6 +50,7 @@
     breadcrumb: I18n.t('nav.dashboard'),
     onInit: function() {
       dashView.init();
+      dashView.setAgents(office.agents);
     },
     onShow: function() {
       dashView._updateGreeting();

@@ -89,6 +89,7 @@ const ThemePalette = {
     signBg: '#f0c000', signBorder: '#1a1a1a', signExcl: '#1a1a1a',
     // Agent label
     agentLabel: 'rgba(60,50,40,0.7)',
+    namePillBg: 'rgba(255,255,255,0.6)',
     // Speech bubble
     speechBubbleBg: 'rgba(255,255,255,0.95)',
     speechBubbleBorder: 'rgba(0,0,0,0.12)',
@@ -137,6 +138,7 @@ const ThemePalette = {
     convBox: '#8B6914', convBoxShadow: '#6b5210',
     signBg: '#d4a800', signBorder: '#1a1a1a', signExcl: '#1a1a1a',
     agentLabel: 'rgba(255,255,255,0.6)',
+    namePillBg: 'rgba(0,0,0,0.5)',
     speechBubbleBg: 'rgba(255,255,255,0.92)',
     speechBubbleBorder: 'rgba(0,0,0,0.12)',
     speechBubbleText: '#2c3e50',
@@ -713,17 +715,17 @@ const PixelSprites = {
   drawBubble(ctx, x, y, text) {
     const p = ThemePalette.current;
     try {
-      ctx.font = '11px "Microsoft JhengHei", "PingFang TC", sans-serif';
+      ctx.font = '13px "Microsoft JhengHei", "PingFang TC", sans-serif';
       const metrics = ctx.measureText(text);
       const tw = metrics.width;
-      const bw = tw + 16;
-      const bh = 22;
+      const bw = tw + 18;
+      const bh = 26;
       const bx = x - bw / 2;
-      const by = y - bh - 8;
+      const by = y - bh - 10;
 
       ctx.fillStyle = p.speechBubbleBg;
       ctx.beginPath();
-      ctx.roundRect(bx, by, bw, bh, 6);
+      ctx.roundRect(bx, by, bw, bh, 8);
       ctx.fill();
 
       ctx.strokeStyle = p.speechBubbleBorder;
@@ -732,9 +734,9 @@ const PixelSprites = {
 
       ctx.fillStyle = p.speechBubbleBg;
       ctx.beginPath();
-      ctx.moveTo(x - 4, by + bh);
-      ctx.lineTo(x, by + bh + 6);
-      ctx.lineTo(x + 4, by + bh);
+      ctx.moveTo(x - 5, by + bh);
+      ctx.lineTo(x, by + bh + 8);
+      ctx.lineTo(x + 5, by + bh);
       ctx.fill();
 
       ctx.fillStyle = p.speechBubbleText;
