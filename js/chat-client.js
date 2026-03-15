@@ -379,6 +379,7 @@ class ChatClient extends EventTarget {
       headers: {
         'Authorization': 'Bearer ' + this.gwApiToken,
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: JSON.stringify({
         model: this.gwApiModel,
@@ -423,6 +424,7 @@ class ChatClient extends EventTarget {
       headers: {
         'Authorization': 'Bearer ' + this.gwApiToken,
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: JSON.stringify({
         model: this.gwApiModel,
@@ -463,6 +465,7 @@ class ChatClient extends EventTarget {
       headers: {
         'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: JSON.stringify({
         model: (opts && opts.gwApiModel) || this.gwApiModel,
