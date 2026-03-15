@@ -374,18 +374,9 @@ class ChatClient extends EventTarget {
     this._intentionalClose = false;
     this._setState('connecting');
 
-    fetch(this.gwApiUrl + '/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + this.gwApiToken,
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify({
-        model: this.gwApiModel,
-        messages: [{ role: 'user', content: 'ping' }],
-        max_tokens: 1,
-      }),
+    // Lightweight health check — no token cost, fast response
+    fetch(this.gwApiUrl + '/health', {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
     })
       .then(r => this._setState(r.ok ? 'connected' : 'disconnected'))
       .catch(() => this._setState('disconnected'));
