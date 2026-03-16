@@ -138,6 +138,7 @@ class ChatClient extends EventTarget {
     this._intentionalClose = true;
     clearTimeout(this._reconnectTimer);
     clearInterval(this._tgPollTimer);
+    clearInterval(this._gwApiHealthTimer);
 
     // Abort any active OpenRouter streams
     for (const ctrl of Object.values(this._orAbort)) {
@@ -398,8 +399,45 @@ class ChatClient extends EventTarget {
     fetch(this.gwApiUrl + '/health', {
       headers: { 'ngrok-skip-browser-warning': 'true' },
     })
-      .then(r => this._setState(r.ok ? 'connected' : 'disconnected'))
-      .catch(() => this._setState('disconnected'));
+      .then(r => {
+        if (r.ok) {
+          this._reconnectDelay = ChatClient.DEFAULTS.reconnectMin;
+          this._setState('connected');
+          this._startGwApiHealthPoll();
+        } else {
+          this._setState('disconnected');
+          if (!this._intentionalClose) this._scheduleReconnect();
+        }
+      })
+      .catch(() => {
+        this._setState('disconnected');
+        if (!this._intentionalClose) this._scheduleReconnect();
+      });
+  }
+
+  _startGwApiHealthPoll() {
+    clearInterval(this._gwApiHealthTimer);
+    this._gwApiHealthTimer = setInterval(() => {
+      if (this.mode !== 'gateway-api' || this._intentionalClose) {
+        clearInterval(this._gwApiHealthTimer);
+        return;
+      }
+      fetch(this.gwApiUrl + '/health', {
+        headers: { 'ngrok-skip-browser-warning': 'true' },
+      })
+        .then(r => {
+          if (!r.ok) {
+            this._setState('disconnected');
+            clearInterval(this._gwApiHealthTimer);
+            if (!this._intentionalClose) this._scheduleReconnect();
+          }
+        })
+        .catch(() => {
+          this._setState('disconnected');
+          clearInterval(this._gwApiHealthTimer);
+          if (!this._intentionalClose) this._scheduleReconnect();
+        });
+    }, 15000);
   }
 
   _sendGatewayApi(agentId, text, fileAttachment) {

@@ -31,42 +31,31 @@
 當使用者訊息包含以下任一關鍵字時，**你必須立即執行下方的指令**：
 價格、歷史價格、進貨價、售價、查價、報價、OE號、UXC、SMP、A05、Beck、零件號、part number、比對、PO、訂單、PUE、與日、庫存、供應商、客戶資訊、stock、inventory
 
-### 強制執行步驟（不可跳過）
+### 強制執行步驟（不可跳過、不可解釋、必須直接用 exec 工具執行）
 
-**Step 1**: 讀取技能文件
-```
-read ~/.openclaw/skills/pue-order/SKILL.md
-```
+⚠️ **你必須使用 `exec` 工具執行下方的指令。不要解釋、不要推測、不要討論腳本行為。直接執行！**
 
-**Step 2**: 根據查詢類型選擇模式執行腳本
-
-**單一零件深度查詢**（查一個零件的完整資訊：庫存、供應商、所有歷史）：
+**Step 1**: 使用 `exec` 工具執行查詢腳本（必須執行，不可跳過）
 ```bash
 python3 ~/.openclaw/skills/pue-order/scripts/match_catalog.py \
   --info "用戶提供的零件號碼" \
   --customer 用戶提供的客戶代碼 \
   --data /Users/tonyjiang/Documents/SmarterERP/PUE/SHEET
 ```
+如果用戶查多個零件，改用 `--lookup "零件1,零件2"` 取代 `--info`。
 
-**多零件批次查價**（查多個零件的價格和庫存）：
-```bash
-python3 ~/.openclaw/skills/pue-order/scripts/match_catalog.py \
-  --lookup "零件1,零件2,零件3" \
-  --customer 用戶提供的客戶代碼 \
-  --data /Users/tonyjiang/Documents/SmarterERP/PUE/SHEET
-```
+**Step 2**: 將 `exec` 回傳的 JSON 結果整理成**完整表格**回覆用戶
 
-**Step 3**: 將 JSON 結果整理成**完整表格**回覆用戶
-
-**重要**：JSON 輸出可能包含多筆符合項目（`all_matches` 陣列或 `results` 陣列）。
-你**必須列出所有符合的品項**，不可只報告第一筆。每筆都要顯示：品號、品名、庫存、進貨價、售價。
+⚠️ JSON 輸出包含 `all_matches` 或 `results` 陣列 → **你必須列出所有品項**，不可只報告第一筆。
 
 ### 🚫 絕對禁止
+- ❌ 不要解釋腳本的行為或限制 — 直接用 `exec` 執行它
+- ❌ 不要說「腳本只回傳一筆」— 腳本已更新，會回傳所有前綴匹配
 - ❌ 不要自己寫 Python/pandas 讀取 xlsx
 - ❌ 不要說「找不到記錄」然後放棄
-- ❌ 不要跳過 Step 2 的腳本執行
+- ❌ 不要跳過 exec 執行步驟
 - ❌ 不要建議用戶「核對編號」而不先跑腳本
-- ❌ 不要只報告第一筆結果 — 必須列出 all_matches / results 中的所有品項
+- ❌ 不要只報告第一筆結果
 
 ### 為什麼必須用腳本
 腳本有 4 層搜尋（itno → itname → alternate → **saled.standard**），
