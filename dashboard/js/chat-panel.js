@@ -1080,8 +1080,13 @@ class ChatPanel {
     escaped = escaped.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
     // Horizontal rule
     escaped = escaped.replace(/^---+$/gm, '<hr class="chat-hr">');
-    // Line breaks (but not inside block elements that already handle spacing)
+    // Line breaks: collapse 3+ newlines into max 2, then convert to <br>
+    escaped = escaped.replace(/\n{3,}/g, '\n\n');
     escaped = escaped.replace(/\n/g, '<br>');
+    // Remove <br> adjacent to block elements (tables, headers, hr, lists)
+    escaped = escaped.replace(/(<br>)+(<div |<table |<h[34] |<hr |<ul>|<ol>)/g, '$2');
+    escaped = escaped.replace(/(<\/div>|<\/table>|<\/h[34]>|<\/ul>|<\/ol>)(<br>)+/g, '$1');
+    escaped = escaped.replace(/(<hr[^>]*>)(<br>)+/g, '$1');
 
     var range = document.createRange();
     el.textContent = '';
