@@ -949,6 +949,8 @@ class ChatPanel {
     this._greeted.clear();
     this._messages = [];
     localStorage.removeItem('oc-chat-history');
+    // Reset Gateway session (send /new to clear server-side conversation)
+    if (typeof this.onClearHistory === 'function') this.onClearHistory();
     if (this.agent) {
       this._restoreConversation(this.agent.id);
       this._showWelcomeMessage(this.agent);

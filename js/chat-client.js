@@ -542,6 +542,30 @@ class ChatClient extends EventTarget {
       .catch(() => false);
   }
 
+  /**
+   * Reset Gateway session by sending /new command.
+   * OpenClaw uses the `user` field to derive session keys;
+   * sending /new within the same user scope resets the conversation.
+   */
+  resetGatewaySession() {
+    if (!this.gwApiUrl || !this.gwApiToken) return Promise.resolve(false);
+    return fetch(this.gwApiUrl + '/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + this.gwApiToken,
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({
+        model: this.gwApiModel,
+        input: '/new',
+        user: 'dashboard-v3',
+      }),
+    })
+      .then(r => r.ok)
+      .catch(() => false);
+  }
+
   // ── OpenResponses SSE stream reader ──────────
 
   /**
