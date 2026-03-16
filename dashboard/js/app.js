@@ -181,6 +181,9 @@
   chat.onSend = function(agentId, text, fileAttachment) {
     return cc.sendChat(agentId, text, fileAttachment);
   };
+  chat.onClearHistory = function() {
+    return cc.resetGatewaySession();
+  };
 
   // ── Wiring: ChatClient events ────────────────
   var _lastNotifiedState = 'disconnected';
