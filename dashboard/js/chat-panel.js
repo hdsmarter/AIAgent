@@ -1062,14 +1062,25 @@ class ChatPanel {
       return html;
     });
 
+    // Code blocks (preserve whitespace inside)
     escaped = escaped.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
     escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Headers
+    escaped = escaped.replace(/^### (.+)$/gm, '<h4 class="chat-h">$1</h4>');
+    escaped = escaped.replace(/^## (.+)$/gm, '<h3 class="chat-h">$1</h3>');
+    escaped = escaped.replace(/^# (.+)$/gm, '<h3 class="chat-h">$1</h3>');
+    // Inline formatting
     escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     escaped = escaped.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
     escaped = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Lists — unordered
     escaped = escaped.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
-    escaped = escaped.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-    escaped = escaped.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    escaped = escaped.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+    // Lists — ordered
+    escaped = escaped.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+    // Horizontal rule
+    escaped = escaped.replace(/^---+$/gm, '<hr class="chat-hr">');
+    // Line breaks (but not inside block elements that already handle spacing)
     escaped = escaped.replace(/\n/g, '<br>');
 
     var range = document.createRange();
