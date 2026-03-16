@@ -809,6 +809,7 @@ class ChatPanel {
   }
 
   updateLastAgentMessage(text) {
+    this._streamingRawText = text; // preserve raw markdown for finalizeStreaming
     var streamingMsg = this._messageList.querySelector('[data-streaming="true"]');
     if (streamingMsg) {
       var bubble = streamingMsg.querySelector('.chat-bubble');
@@ -823,8 +824,9 @@ class ChatPanel {
       streamingMsg.removeAttribute('data-streaming');
       var bubble = streamingMsg.querySelector('.chat-bubble');
       if (bubble) {
-        // Use innerText to preserve line breaks (<br> → \n), not textContent which strips all HTML
-        var savedText = bubble.innerText || bubble.textContent;
+        // Use raw streaming text (preserves markdown tables/headers) instead of innerText
+        var savedText = this._streamingRawText || bubble.innerText || bubble.textContent;
+        this._streamingRawText = null;
         this._messages.push({ role: 'agent', text: savedText, time: new Date() });
 
         // Add action buttons after streaming
@@ -1047,7 +1049,8 @@ class ChatPanel {
     var escaped = tmp.textContent;
 
     // Extract markdown tables before other processing
-    escaped = escaped.replace(/((?:^\|.+\|[ \t]*\n)+)/gm, function(tableBlock) {
+    // (?:\n|$) — last row may lack trailing newline (SSE streaming, end of text)
+    escaped = escaped.replace(/((?:^\|.+\|[ \t]*(?:\n|$))+)/gm, function(tableBlock) {
       var rows = tableBlock.trim().split('\n');
       if (rows.length < 2) return tableBlock;
       var html = '<table class="chat-table">';

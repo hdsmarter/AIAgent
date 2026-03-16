@@ -1533,17 +1533,21 @@ body {
   border: 1px solid var(--chat-border);
   padding: 6px 10px;
   text-align: left;
-  white-space: nowrap;
 }
 .chat-bubble th {
   background: rgba(0, 0, 0, 0.05);
   font-weight: 600;
+  white-space: nowrap;
 }
 :root[data-theme="dark"] .chat-bubble th {
   background: rgba(255, 255, 255, 0.08);
 }
-/* Allow long cell content to wrap on narrow screens */
-.chat-bubble td { max-width: 250px; white-space: normal; word-break: break-all; }
+/* Allow cell content to auto-wrap within table bounds */
+.chat-bubble td {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
 
 .chat-bubble ul, .chat-bubble ol {
   padding-left: 18px;
