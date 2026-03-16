@@ -56,13 +56,17 @@ python3 ~/.openclaw/skills/pue-order/scripts/match_catalog.py \
   --data /Users/tonyjiang/Documents/SmarterERP/PUE/SHEET
 ```
 
-**Step 3**: 將 JSON 結果整理成表格回覆用戶
+**Step 3**: 將 JSON 結果整理成**完整表格**回覆用戶
+
+**重要**：JSON 輸出可能包含多筆符合項目（`all_matches` 陣列或 `results` 陣列）。
+你**必須列出所有符合的品項**，不可只報告第一筆。每筆都要顯示：品號、品名、庫存、進貨價、售價。
 
 ### 🚫 絕對禁止
 - ❌ 不要自己寫 Python/pandas 讀取 xlsx
 - ❌ 不要說「找不到記錄」然後放棄
 - ❌ 不要跳過 Step 2 的腳本執行
 - ❌ 不要建議用戶「核對編號」而不先跑腳本
+- ❌ 不要只報告第一筆結果 — 必須列出 all_matches / results 中的所有品項
 
 ### 為什麼必須用腳本
 腳本有 4 層搜尋（itno → itname → alternate → **saled.standard**），
