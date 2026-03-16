@@ -116,7 +116,8 @@
   // ── Agent selection (unified) ────────────────
   function selectAgent(agent) {
     chat.open(agent);
-    chat.setOffline(cc.state !== 'connected');
+    var isOffline = cc.state !== 'connected' && cc.mode !== 'gateway-api';
+    chat.setOffline(isOffline);
     chat.showTelegramFallback(cc.state !== 'connected' && cc.mode === 'telegram');
     viewMgr.setActiveAgent(agent.id);
     office.selectedAgent = agent;
@@ -201,7 +202,10 @@
       notify.warning(I18n.t('app.disconnected'));
     }
     _lastNotifiedState = 'disconnected';
-    chat.setOffline(true);
+    // Gateway API is stateless HTTP — don't block input on disconnect.
+    // User can still attempt to send; the request will fail naturally if truly offline.
+    var blockInput = cc.mode !== 'gateway-api';
+    chat.setOffline(blockInput);
     chat.showTelegramFallback(cc.mode === 'telegram');
   });
 

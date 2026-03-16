@@ -417,6 +417,7 @@ class ChatClient extends EventTarget {
 
   _startGwApiHealthPoll() {
     clearInterval(this._gwApiHealthTimer);
+    this._gwApiHealthFailCount = 0;
     this._gwApiHealthTimer = setInterval(() => {
       if (this.mode !== 'gateway-api' || this._intentionalClose) {
         clearInterval(this._gwApiHealthTimer);
@@ -426,22 +427,37 @@ class ChatClient extends EventTarget {
         headers: { 'ngrok-skip-browser-warning': 'true' },
       })
         .then(r => {
-          if (!r.ok) {
+          if (r.ok) {
+            this._gwApiHealthFailCount = 0;
+            // Auto-recover: if we were disconnected, set connected
+            if (this.state !== 'connected') {
+              this._reconnectDelay = ChatClient.DEFAULTS.reconnectMin;
+              this._setState('connected');
+            }
+          } else {
+            this._gwApiHealthFailCount++;
+            if (this._gwApiHealthFailCount >= 3) {
+              this._setState('disconnected');
+              clearInterval(this._gwApiHealthTimer);
+              if (!this._intentionalClose) this._scheduleReconnect();
+            }
+          }
+        })
+        .catch(() => {
+          this._gwApiHealthFailCount++;
+          if (this._gwApiHealthFailCount >= 3) {
             this._setState('disconnected');
             clearInterval(this._gwApiHealthTimer);
             if (!this._intentionalClose) this._scheduleReconnect();
           }
-        })
-        .catch(() => {
-          this._setState('disconnected');
-          clearInterval(this._gwApiHealthTimer);
-          if (!this._intentionalClose) this._scheduleReconnect();
         });
     }, 15000);
   }
 
   _sendGatewayApi(agentId, text, fileAttachment) {
-    if (this.state !== 'connected' || !this.gwApiUrl || !this.gwApiToken) return false;
+    // Gateway API is stateless HTTP — don't block on connection state.
+    // Only block if credentials are missing.
+    if (!this.gwApiUrl || !this.gwApiToken) return false;
 
     // ALL gateway-api messages route through /v1/responses (Agent pipeline).
     // This enables: workspace knowledge (PUE-ASSIST.md), tool calling, skill triggering.
@@ -491,6 +507,12 @@ class ChatClient extends EventTarget {
     })
       .then(response => {
         if (!response.ok) throw new Error('HTTP ' + response.status);
+        // Successful HTTP request proves connectivity — auto-recover state
+        if (this.state !== 'connected') {
+          this._reconnectDelay = ChatClient.DEFAULTS.reconnectMin;
+          this._setState('connected');
+          this._startGwApiHealthPoll();
+        }
         return this._readResponsesStream(response.body, agentId);
       })
       .catch(err => {
