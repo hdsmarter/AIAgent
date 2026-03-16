@@ -569,7 +569,8 @@ class ChatClient extends EventTarget {
         buffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
+          // Skip SSE comments (keepalive) and non-data lines
+          if (line.startsWith(':') || !line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           if (data === '[DONE]') continue;
 
@@ -592,6 +593,15 @@ class ChatClient extends EventTarget {
               this.dispatchEvent(new CustomEvent('message', {
                 detail: { type: 'stream', agentId, text: fullText }
               }));
+            }
+            // Text segment complete — dispatch as final if we have text
+            else if (parsed.type === 'response.output_text.done') {
+              if (fullText) {
+                this.dispatchEvent(new CustomEvent('message', {
+                  detail: { type: 'response', agentId, text: fullText, final: true }
+                }));
+                fullText = '';
+              }
             }
             // Handle output_item.added — reset accumulator for new items
             else if (parsed.type === 'response.output_item.added' && parsed.output_index !== undefined) {

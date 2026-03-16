@@ -833,12 +833,14 @@ class ChatPanel {
       streamingMsg.removeAttribute('data-streaming');
       var bubble = streamingMsg.querySelector('.chat-bubble');
       if (bubble) {
-        this._messages.push({ role: 'agent', text: bubble.textContent, time: new Date() });
+        // Use innerText to preserve line breaks (<br> → \n), not textContent which strips all HTML
+        var savedText = bubble.innerText || bubble.textContent;
+        this._messages.push({ role: 'agent', text: savedText, time: new Date() });
 
         // Add copy button to meta after streaming
         var meta = streamingMsg.querySelector('.chat-msg-meta');
         if (meta) {
-          var finalText = bubble.textContent;
+          var finalText = savedText;
           var copyBtn = document.createElement('button');
           copyBtn.className = 'chat-msg-copy';
           copyBtn.setAttribute('aria-label', 'Copy');
