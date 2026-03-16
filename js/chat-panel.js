@@ -179,8 +179,7 @@ class ChatPanel {
     clearBtn.className = 'chat-action-btn';
     clearBtn.title = I18n.lang === 'en' ? 'Clear chat' : '清除聊天';
     clearBtn.setAttribute('aria-label', clearBtn.title);
-    clearBtn.textContent = '\uD83D\uDDD1';
-    clearBtn.style.fontSize = '14px';
+    clearBtn.appendChild(svgFromTemplate(SvgIcons.trash));
     clearBtn.addEventListener('click', () => {
       var msg = I18n.lang === 'en' ? 'Clear all chat history?' : '確定清除所有聊天記錄？';
       if (confirm(msg)) this.clearChatHistory();
@@ -233,7 +232,7 @@ class ChatPanel {
     this._scrollBottomBtn = document.createElement('button');
     this._scrollBottomBtn.className = 'chat-scroll-bottom-btn';
     this._scrollBottomBtn.setAttribute('aria-label', 'Scroll to bottom');
-    this._scrollBottomBtn.textContent = '\u2193';
+    this._scrollBottomBtn.appendChild(svgFromTemplate(SvgIcons.arrowDown));
     this._scrollBottomBtn.addEventListener('click', () => this._scrollToBottom());
     mainArea.appendChild(this._scrollBottomBtn);
 

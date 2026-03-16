@@ -45,6 +45,8 @@ var SvgIcons = {
   agentEye:       '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4C5 4 1.7 8.3 1 10c.7 1.7 4 6 9 6s8.3-4.3 9-6c-.7-1.7-4-6-9-6zm0 2a4 4 0 110 8 4 4 0 010-8zm0 2a2 2 0 100 4 2 2 0 000-4z"/></svg>',
   agentCrown:     '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 14l2-8 3 4 3-6 3 6 3-4 2 8H2zm1.5 1h13a1 1 0 010 2h-13a1 1 0 010-2z"/></svg>',
   agentHandshake: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 8l3-3 2.5 1L10 4l2.5 2L15 5l3 3-2 2-1.5-.5L12 12l-2-1-2 1-2.5-2.5L4 10 2 8zm4 5l2 2 2-1 2 1 2-2 1.5 1L12 17H8l-3.5-3L6 13z"/></svg>',
+  trash:    '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a1 1 0 00-1 1H4a1 1 0 000 2h12a1 1 0 000-2h-3a1 1 0 00-1-1H8zM5 6v10a2 2 0 002 2h6a2 2 0 002-2V6H5zm3 2a1 1 0 012 0v6a1 1 0 01-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 01-2 0V8z"/></svg>',
+  arrowDown:'<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v9.6l3.3-3.3a1 1 0 011.4 1.4l-5 5a1 1 0 01-1.4 0l-5-5a1 1 0 011.4-1.4L9 13.6V4a1 1 0 011-1z"/></svg>',
 };
 
 /**

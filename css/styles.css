@@ -1535,7 +1535,6 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  font-size: 18px;
   color: var(--text-dim);
   transition: background 0.2s, box-shadow 0.2s;
 }
@@ -1543,6 +1542,7 @@ body {
   background: var(--surface-hover);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+.chat-scroll-bottom-btn svg { width: 16px; height: 16px; }
 
 /* Typing indicator */
 .chat-typing {
