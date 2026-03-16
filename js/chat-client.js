@@ -674,9 +674,13 @@ class ChatClient extends EventTarget {
                 currentOutputIndex = parsed.output_index;
               }
               fullText += parsed.delta;
-              this.dispatchEvent(new CustomEvent('message', {
-                detail: { type: 'stream', agentId, text: fullText }
-              }));
+              // Strip thinking tags during streaming to avoid showing <think> to user
+              var displayText = ChatClient._stripThinkTags(fullText);
+              if (displayText) {
+                this.dispatchEvent(new CustomEvent('message', {
+                  detail: { type: 'stream', agentId, text: displayText }
+                }));
+              }
             }
             // Text segment complete — dispatch as final if we have text
             else if (parsed.type === 'response.output_text.done') {
@@ -697,6 +701,16 @@ class ChatClient extends EventTarget {
               }
               currentOutputIndex = parsed.output_index;
             }
+            // response.failed — agent error (e.g. provider timeout, no reply)
+            else if (parsed.type === 'response.failed') {
+              var errMsg = (parsed.response && parsed.response.error && parsed.response.error.message)
+                || I18n.t('chat.sendFail');
+              this.dispatchEvent(new CustomEvent('message', {
+                detail: { type: 'response', agentId, text: errMsg, final: true }
+              }));
+              fullText = '';  // Prevent duplicate dispatch after loop
+              return;
+            }
             // Fallback: chat/completions format (in case gateway proxies as such)
             else if (parsed.choices && parsed.choices[0]?.delta?.content) {
               fullText += parsed.choices[0].delta.content;
@@ -713,6 +727,9 @@ class ChatClient extends EventTarget {
       reader.releaseLock();
     }
 
+    // Strip Gemini <think>...</think> tags before final dispatch
+    fullText = ChatClient._stripThinkTags(fullText);
+
     this.dispatchEvent(new CustomEvent('message', {
       detail: {
         type: 'response',
@@ -721,6 +738,16 @@ class ChatClient extends EventTarget {
         final: true,
       }
     }));
+  }
+
+  /** Strip Gemini <think>...</think> reasoning tags from response text */
+  static _stripThinkTags(text) {
+    if (!text) return text;
+    // Remove complete <think>...</think> blocks (multiline)
+    text = text.replace(/<think>[\s\S]*?<\/think>\s*/g, '');
+    // Remove unclosed <think> at end (streaming cutoff)
+    text = text.replace(/<think>[\s\S]*$/g, '');
+    return text.trim();
   }
 
   // ── Telegram Bot API ──────────────────────────
