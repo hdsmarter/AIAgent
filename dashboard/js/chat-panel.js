@@ -60,6 +60,9 @@ class ChatPanel {
     // Per-agent conversation memory
     this._agentMessages = new Map();
 
+    // Last chat time per agent (for sorting)
+    this._agentLastChatTime = new Map();
+
     // Track which agents have been greeted
     this._greeted = new Set();
 
@@ -120,6 +123,8 @@ class ChatPanel {
     for (var i = 0; i < this._agents.length; i++) {
       this._agentListEl.appendChild(this._createAgentListItem(this._agents[i]));
     }
+    // Sort by last chat time (most recent first)
+    this._sortAgentList();
     leftPanel.appendChild(this._agentListEl);
     split.appendChild(leftPanel);
 
@@ -883,6 +888,23 @@ class ChatPanel {
         lastMsg.textContent = text.length > 30 ? text.slice(0, 30) + '\u2026' : text;
       }
     }
+    // Update last chat time and re-sort
+    this._agentLastChatTime.set(agentId, Date.now());
+    this._sortAgentList();
+  }
+
+  _sortAgentList() {
+    if (!this._agentListEl) return;
+    var items = Array.from(this._agentListEl.querySelectorAll('.chat-agent-list-item'));
+    var times = this._agentLastChatTime;
+    items.sort(function(a, b) {
+      var tA = times.get(parseInt(a.dataset.agentId, 10)) || 0;
+      var tB = times.get(parseInt(b.dataset.agentId, 10)) || 0;
+      return tB - tA; // most recent first
+    });
+    for (var i = 0; i < items.length; i++) {
+      this._agentListEl.appendChild(items[i]);
+    }
   }
 
   // ── Per-agent conversation memory ─────────────
@@ -923,7 +945,12 @@ class ChatPanel {
         });
         this._agentMessages.set(agentId, msgs);
         // Mark agent as greeted if they have messages
-        if (msgs.length > 0) this._greeted.add(agentId);
+        if (msgs.length > 0) {
+          this._greeted.add(agentId);
+          // Track last chat time for sorting
+          var lastMsg = msgs[msgs.length - 1];
+          if (lastMsg.time) this._agentLastChatTime.set(agentId, lastMsg.time.getTime());
+        }
       }
     } catch (e) {
       // Corrupted data — start fresh
@@ -932,6 +959,7 @@ class ChatPanel {
 
   clearChatHistory() {
     this._agentMessages.clear();
+    this._agentLastChatTime.clear();
     this._greeted.clear();
     this._messages = [];
     localStorage.removeItem('oc-chat-history');
