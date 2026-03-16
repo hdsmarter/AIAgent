@@ -1406,6 +1406,7 @@ body {
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
+  overflow: hidden;
 }
 
 .chat-msg-user .chat-bubble {
@@ -1515,6 +1516,35 @@ body {
 :root[data-theme="dark"] .chat-bubble pre {
   background: rgba(255, 255, 255, 0.06);
 }
+/* Tables in agent bubbles — responsive with horizontal scroll */
+.chat-bubble .table-wrapper {
+  overflow-x: auto;
+  margin: 8px -4px;
+  -webkit-overflow-scrolling: touch;
+}
+.chat-bubble table {
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.4;
+  width: 100%;
+  min-width: 300px;
+}
+.chat-bubble th, .chat-bubble td {
+  border: 1px solid var(--chat-border);
+  padding: 6px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+.chat-bubble th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+:root[data-theme="dark"] .chat-bubble th {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* Allow long cell content to wrap on narrow screens */
+.chat-bubble td { max-width: 250px; white-space: normal; word-break: break-all; }
+
 .chat-bubble ul, .chat-bubble ol {
   padding-left: 18px;
   margin: 4px 0;

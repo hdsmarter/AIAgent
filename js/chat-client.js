@@ -354,15 +354,17 @@ class ChatClient extends EventTarget {
       hist[agentId].push({ role: 'assistant', content: fullText });
     }
 
-    // Final response event
-    this.dispatchEvent(new CustomEvent('message', {
-      detail: {
-        type: 'response',
-        agentId,
-        text: fullText || I18n.t('chat.sendFail'),
-        final: true,
-      }
-    }));
+    // Final response event — only if we have text
+    if (fullText) {
+      this.dispatchEvent(new CustomEvent('message', {
+        detail: {
+          type: 'response',
+          agentId,
+          text: fullText,
+          final: true,
+        }
+      }));
+    }
   }
 
   _testOpenRouter(opts) {
@@ -730,14 +732,17 @@ class ChatClient extends EventTarget {
     // Strip Gemini <think>...</think> tags before final dispatch
     fullText = ChatClient._stripThinkTags(fullText);
 
-    this.dispatchEvent(new CustomEvent('message', {
-      detail: {
-        type: 'response',
-        agentId,
-        text: fullText || I18n.t('chat.sendFail'),
-        final: true,
-      }
-    }));
+    // Only dispatch if we have actual text (avoid empty error messages in chat)
+    if (fullText) {
+      this.dispatchEvent(new CustomEvent('message', {
+        detail: {
+          type: 'response',
+          agentId,
+          text: fullText,
+          final: true,
+        }
+      }));
+    }
   }
 
   /** Strip Gemini <think>...</think> reasoning tags from response text */

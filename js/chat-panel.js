@@ -1059,7 +1059,7 @@ class ChatPanel {
         html += '<tr>' + cells.map(function(c) { return '<' + tag + '>' + c.trim() + '</' + tag + '>'; }).join('') + '</tr>';
       }
       html += '</table>';
-      return html;
+      return '<div class="table-wrapper">' + html + '</div>';
     });
 
     // Code blocks (preserve whitespace inside)
@@ -1383,9 +1383,9 @@ class ChatPanel {
     if (this.onSend) {
       var sent = this.onSend(this.agent.id, text, fileAttachment);
       if (!sent) {
+        // Mark the user's message as failed (red border) — no system bubble
         var last = this._messageList.lastElementChild;
         if (last) last.classList.add('chat-msg-failed');
-        this.addMessage('system', '\u274C ' + I18n.t('chat.sendFail'));
         this._sendBtn.classList.remove('loading');
       }
     }
