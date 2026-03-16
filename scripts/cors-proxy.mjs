@@ -112,11 +112,21 @@ const server = http.createServer((req, res) => {
         res.writeHead(proxyRes.statusCode, headers);
         res.flushHeaders();
 
+        // SSE keepalive: send comment every 15s to prevent ngrok/browser idle timeout
+        const keepalive = setInterval(() => {
+          try { res.write(': keepalive\n\n'); } catch {}
+        }, 15000);
+
         // Forward each chunk immediately — no pipe() buffering
         proxyRes.on('data', (chunk) => {
           res.write(chunk);
         });
         proxyRes.on('end', () => {
+          clearInterval(keepalive);
+          res.end();
+        });
+        proxyRes.on('error', () => {
+          clearInterval(keepalive);
           res.end();
         });
       } else {
@@ -135,9 +145,10 @@ const server = http.createServer((req, res) => {
   });
 });
 
-// Increase keep-alive for stable long connections
-server.keepAliveTimeout = 120000;
-server.headersTimeout = 125000;
+// Increase timeouts for stable long connections (tool execution can take 30s+)
+server.keepAliveTimeout = 300000;   // 5 min
+server.headersTimeout = 305000;
+server.timeout = 300000;
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`CORS proxy: 127.0.0.1:${PORT} → ${GATEWAY} (SSE-optimized)`);
