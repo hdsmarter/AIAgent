@@ -238,10 +238,12 @@
     // Final response (from any mode)
     if (d.type === 'response' && d.final) {
       if (chat._streaming) {
+        // Store quick replies for finalizeStreaming to pick up
+        chat._pendingQuickReplies = d.quickReplies || null;
         chat.finalizeStreaming();
       } else if (chat.isOpen && chat.agent && chat.agent.id === d.agentId) {
         chat.setTyping(false);
-        chat.addMessage('agent', d.text);
+        chat.addMessage('agent', d.text, { quickReplies: d.quickReplies });
       }
       office.showAgentSpeech(d.agentId, d.text);
       viewMgr.updateLastMessage(d.agentId, d.text);

@@ -10,16 +10,47 @@ echo "────────────────────────�
 
 # Step 1: Check prerequisites
 log_step "Checking prerequisites..."
-require_cmd openclaw
 require_cmd git
 require_cmd jq
+
+# Check for NemoClaw (preferred) or OpenClaw (fallback)
+USE_NEMOCLAW=false
+if command -v nemoclaw &>/dev/null; then
+  USE_NEMOCLAW=true
+  NEMOCLAW_VERSION=$(nemoclaw --version 2>/dev/null || echo "unknown")
+  log_ok "NemoClaw: $NEMOCLAW_VERSION"
+  # Verify Docker is running (required for NemoClaw sandbox)
+  if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    log_ok "Docker: running"
+  else
+    log_error "Docker Desktop is required for NemoClaw but not running"
+    exit 1
+  fi
+else
+  require_cmd openclaw
+  log_warn "NemoClaw not found — using direct OpenClaw mode"
+fi
 
 OPENCLAW_VERSION=$(openclaw --version 2>/dev/null || echo "unknown")
 log_ok "OpenClaw: $OPENCLAW_VERSION"
 
 # Step 2: Check gateway
 log_step "Checking gateway..."
-if openclaw health &>/dev/null; then
+if $USE_NEMOCLAW; then
+  if nemoclaw nemoclaw status 2>/dev/null | grep -qi "running"; then
+    log_ok "NemoClaw sandbox is running"
+  else
+    log_warn "NemoClaw sandbox not running — attempting start..."
+    nemoclaw start &>/dev/null || true
+    sleep 3
+    if nemoclaw nemoclaw status 2>/dev/null | grep -qi "running"; then
+      log_ok "NemoClaw sandbox started successfully"
+    else
+      log_error "Failed to start NemoClaw. Run: nemoclaw start"
+      exit 1
+    fi
+  fi
+elif openclaw health &>/dev/null; then
   log_ok "Gateway is running"
 else
   log_warn "Gateway not running — attempting start..."

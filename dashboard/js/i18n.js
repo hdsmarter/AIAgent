@@ -42,6 +42,9 @@ const I18n = {
     'chat.shiftEnter':   { 'zh-TW': 'Shift+Enter \u63DB\u884C', 'zh-CN': 'Shift+Enter \u6362\u884C', en: 'Shift+Enter for newline' },
     'chat.imageUploaded': { 'zh-TW': '\u8ACB\u5206\u6790\u9019\u5F35\u5716\u7247', 'zh-CN': '\u8BF7\u5206\u6790\u8FD9\u5F20\u56FE\u7247', en: 'Please analyze this image' },
 
+    'chat.quickReplyLabel':   { 'zh-TW': '\u5FEB\u901F\u64CD\u4F5C\uFF1A{label}', 'zh-CN': '\u5FEB\u901F\u64CD\u4F5C\uFF1A{label}', en: 'Quick action: {label}' },
+    'chat.quickRepliesGroup': { 'zh-TW': '\u5EFA\u8B70\u5F8C\u7E8C\u64CD\u4F5C', 'zh-CN': '\u5EFA\u8BAE\u540E\u7EED\u64CD\u4F5C', en: 'Suggested follow-up actions' },
+
     // ── Settings Panel ──────────────────────────
     'settings.title':          { 'zh-TW': '\u8A2D\u5B9A',           'zh-CN': '\u8BBE\u7F6E',           en: 'Settings' },
     'settings.langLabel':      { 'zh-TW': '\u4ECB\u9762\u8A9E\u8A00',       'zh-CN': '\u754C\u9762\u8BED\u8A00',       en: 'Language' },

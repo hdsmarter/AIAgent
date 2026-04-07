@@ -352,7 +352,11 @@ class ChatClient extends EventTarget {
       reader.releaseLock();
     }
 
-    // Store assistant response in history
+    // Parse quick replies before dispatching
+    var parsed = ChatClient.parseQuickReplies(fullText);
+    fullText = parsed.cleanText;
+
+    // Store assistant response in history (clean text, no directive)
     const hist = historyMap || this._orHistory;
     if (fullText && hist[agentId]) {
       hist[agentId].push({ role: 'assistant', content: fullText });
@@ -366,6 +370,7 @@ class ChatClient extends EventTarget {
           agentId,
           text: fullText,
           final: true,
+          quickReplies: parsed.replies,
         }
       }));
     }
@@ -685,6 +690,8 @@ class ChatClient extends EventTarget {
               fullText += parsed.delta;
               // Strip thinking tags during streaming to avoid showing <think> to user
               var displayText = ChatClient._stripThinkTags(fullText);
+              // Strip [[quick_replies:...]] (complete or partial) during streaming
+              displayText = displayText.replace(/\[\[quick_replies:.*$/s, '').trim();
               if (displayText) {
                 this.dispatchEvent(new CustomEvent('message', {
                   detail: { type: 'stream', agentId, text: displayText }
@@ -694,8 +701,9 @@ class ChatClient extends EventTarget {
             // Text segment complete — dispatch as final if we have text
             else if (parsed.type === 'response.output_text.done') {
               if (fullText) {
+                var qr = ChatClient.parseQuickReplies(fullText);
                 this.dispatchEvent(new CustomEvent('message', {
-                  detail: { type: 'response', agentId, text: fullText, final: true }
+                  detail: { type: 'response', agentId, text: qr.cleanText, final: true, quickReplies: qr.replies }
                 }));
                 fullText = '';
               }
@@ -739,6 +747,10 @@ class ChatClient extends EventTarget {
     // Strip Gemini <think>...</think> tags before final dispatch
     fullText = ChatClient._stripThinkTags(fullText);
 
+    // Parse quick replies before final dispatch
+    var qrFinal = ChatClient.parseQuickReplies(fullText);
+    fullText = qrFinal.cleanText;
+
     // Only dispatch if we have actual text (avoid empty error messages in chat)
     if (fullText) {
       this.dispatchEvent(new CustomEvent('message', {
@@ -747,9 +759,23 @@ class ChatClient extends EventTarget {
           agentId,
           text: fullText,
           final: true,
+          quickReplies: qrFinal.replies,
         }
       }));
     }
+  }
+
+  /**
+   * Parse [[quick_replies: A, B, C]] directive from AI response text.
+   * Returns { cleanText, replies: string[] }
+   */
+  static parseQuickReplies(text) {
+    if (!text) return { cleanText: text, replies: [] };
+    var match = text.match(/\[\[quick_replies:\s*(.+?)\]\]/);
+    if (!match) return { cleanText: text, replies: [] };
+    var replies = match[1].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    var cleanText = text.replace(/\s*\[\[quick_replies:\s*.+?\]\]\s*$/, '').trim();
+    return { cleanText: cleanText, replies: replies };
   }
 
   /** Strip Gemini <think>...</think> reasoning tags from response text */

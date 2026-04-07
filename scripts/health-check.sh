@@ -12,7 +12,14 @@ CHANNELS=("telegram" "line")
 ERRORS=0
 
 check_gateway() {
-  if openclaw health &>/dev/null; then
+  # Try NemoClaw first, fall back to direct OpenClaw
+  if command -v nemoclaw &>/dev/null; then
+    if nemoclaw nemoclaw status 2>/dev/null | grep -qi "running"; then
+      echo "running"
+    else
+      echo "offline"
+    fi
+  elif openclaw health &>/dev/null; then
     echo "running"
   else
     echo "offline"
@@ -20,9 +27,13 @@ check_gateway() {
 }
 
 check_channels() {
-  # openclaw channels status returns all channels at once
+  # Try NemoClaw sandbox, fall back to direct OpenClaw
   local output
-  output=$(openclaw channels status 2>&1)
+  if command -v nemoclaw &>/dev/null; then
+    output=$(nemoclaw nemoclaw connect -- openclaw channels status 2>&1)
+  else
+    output=$(openclaw channels status 2>&1)
+  fi
   for ch in "${CHANNELS[@]}"; do
     if echo "$output" | grep -qi "${ch}.*running"; then
       CHANNEL_STATUS[$ch]="ok"

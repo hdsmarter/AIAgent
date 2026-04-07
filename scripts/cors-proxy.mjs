@@ -18,7 +18,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const GATEWAY = 'http://127.0.0.1:18789';
+const GATEWAY = process.env.GATEWAY_URL || 'http://127.0.0.1:18789';
 const PORT = parseInt(process.env.PORT || '18790', 10);
 const UPLOAD_DIR = '/tmp/dashboard-uploads';
 

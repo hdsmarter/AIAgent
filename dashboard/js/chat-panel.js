@@ -640,6 +640,48 @@ class ChatPanel {
     this._scrollToBottom();
   }
 
+  /**
+   * Show dynamic quick reply buttons after an AI response.
+   * Reuses suggestion chip styling with fade-in animation.
+   * @param {string[]} replies - Button labels from [[quick_replies:...]]
+   */
+  _showQuickReplies(replies) {
+    if (!replies || replies.length === 0) return;
+    // Remove any previous quick reply container
+    this._removeQuickReplies();
+
+    var container = document.createElement('div');
+    container.className = 'chat-suggestion-chips chat-quick-replies';
+    container.setAttribute('role', 'group');
+    container.setAttribute('aria-label', I18n.t('chat.quickRepliesGroup'));
+
+    for (var i = 0; i < replies.length; i++) {
+      var chip = document.createElement('button');
+      chip.className = 'chat-suggestion-chip chat-quick-reply-btn';
+      chip.textContent = replies[i];
+      chip.setAttribute('aria-label', I18n.t('chat.quickReplyLabel').replace('{label}', replies[i]));
+      // Stagger fade-in
+      chip.style.animationDelay = (i * 0.08) + 's';
+      (function(text, cont) {
+        chip.addEventListener('click', function() {
+          cont.remove();
+          this._input.value = text;
+          this._sendMessage();
+        }.bind(this));
+      }.bind(this))(replies[i], container);
+      container.appendChild(chip);
+    }
+
+    this._messageList.appendChild(container);
+    this._scrollToBottom();
+  }
+
+  /** Remove any existing quick reply button container */
+  _removeQuickReplies() {
+    var existing = this._messageList.querySelector('.chat-quick-replies');
+    if (existing) existing.remove();
+  }
+
   close() {
     if (this.agent) this._saveConversation();
     this.isOpen = false;
@@ -753,6 +795,11 @@ class ChatPanel {
     this._trimMessages();
     this._scrollToBottom();
 
+    // Show dynamic quick replies for agent messages (non-streaming path)
+    if (role === 'agent' && opts && opts.quickReplies && opts.quickReplies.length > 0) {
+      this._showQuickReplies(opts.quickReplies);
+    }
+
     // Update agent list last message
     this._updateAgentListLastMsg(this._activeAgentId, text);
 
@@ -827,6 +874,13 @@ class ChatPanel {
         // Use raw streaming text (preserves markdown tables/headers) instead of innerText
         var savedText = this._streamingRawText || bubble.innerText || bubble.textContent;
         this._streamingRawText = null;
+
+        // Strip [[quick_replies:...]] from saved text (clean DB/display)
+        var qr = ChatClient.parseQuickReplies(savedText);
+        savedText = qr.cleanText;
+        // Re-render bubble with cleaned text
+        this._renderMarkdown(bubble, savedText);
+
         this._messages.push({ role: 'agent', text: savedText, time: new Date() });
 
         // Add action buttons after streaming
@@ -839,6 +893,11 @@ class ChatPanel {
         if (bubble && contentWrap) {
           this._maybeAddCsvBtn(bubble, contentWrap, savedText);
         }
+
+        // Show dynamic quick reply buttons (from parsed text or pending event)
+        var replies = (qr.replies.length > 0) ? qr.replies : this._pendingQuickReplies;
+        this._pendingQuickReplies = null;
+        this._showQuickReplies(replies);
       }
     }
     this._streaming = false;
@@ -1382,6 +1441,9 @@ class ChatPanel {
     this._sending = true;
     this._sendBtn.disabled = true;
     this._sendBtn.classList.add('loading');
+
+    // Remove previous quick reply buttons
+    this._removeQuickReplies();
 
     this.addMessage('user', text);
     this._input.value = '';
