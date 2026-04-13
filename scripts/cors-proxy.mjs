@@ -22,12 +22,31 @@ const GATEWAY = process.env.GATEWAY_URL || 'http://127.0.0.1:18789';
 const PORT = parseInt(process.env.PORT || '18790', 10);
 const UPLOAD_DIR = '/tmp/dashboard-uploads';
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning',
-  'Access-Control-Max-Age': '86400',
-};
+// Allowed origins for CORS (restrict to known Dashboard sources)
+const ALLOWED_ORIGINS = new Set([
+  'https://ai2.smarter.tw',
+  'https://hdsmarter.github.io',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+]);
+
+function getCorsHeaders(req) {
+  const origin = req.headers.origin || '';
+  // Allow if origin matches whitelist, or if no origin (same-origin / server-to-server)
+  const allowedOrigin = !origin || ALLOWED_ORIGINS.has(origin)
+    ? (origin || '*')
+    : '';
+
+  // Also allow ngrok dynamic URLs for development
+  const isNgrok = origin && origin.endsWith('.ngrok-free.app');
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin || (isNgrok ? origin : ''),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, ngrok-skip-browser-warning',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 // SSE-specific headers to prevent buffering at every layer
 const SSE_HEADERS = {
@@ -39,7 +58,7 @@ const SSE_HEADERS = {
 const server = http.createServer((req, res) => {
   // ── Preflight ──
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS);
+    res.writeHead(204, getCorsHeaders(req));
     res.end();
     return;
   }
@@ -61,10 +80,10 @@ const server = http.createServer((req, res) => {
         const base64 = body.dataUrl.split(',')[1] || body.dataUrl;
         fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
 
-        res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
+        res.writeHead(200, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, path: filePath, filename: safeName }));
       } catch (err) {
-        res.writeHead(400, { ...CORS, 'Content-Type': 'application/json' });
+        res.writeHead(400, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
     });
@@ -75,10 +94,10 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
     // Quick reachability check to Gateway
     http.get(GATEWAY + '/health', (gwRes) => {
-      res.writeHead(gwRes.statusCode, { ...CORS, 'Content-Type': 'application/json' });
+      res.writeHead(gwRes.statusCode, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
       gwRes.pipe(res);
     }).on('error', () => {
-      res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
+      res.writeHead(200, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, proxy: true }));
     });
     return;
@@ -104,7 +123,7 @@ const server = http.createServer((req, res) => {
       method: req.method,
       headers: { ...fwdHeaders, 'Content-Length': body.length },
     }, (proxyRes) => {
-      const headers = { ...proxyRes.headers, ...CORS };
+      const headers = { ...proxyRes.headers, ...getCorsHeaders(req) };
 
       if (isStreamRequest) {
         // SSE mode: add anti-buffering headers, flush immediately
@@ -137,7 +156,7 @@ const server = http.createServer((req, res) => {
     });
 
     proxyReq.on('error', () => {
-      res.writeHead(502, { ...CORS, 'Content-Type': 'application/json' });
+      res.writeHead(502, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Gateway unreachable' }));
     });
 

@@ -60,6 +60,8 @@
 成本、月均成本、成本異常、成本趨勢、cost、
 庫存週轉、呆滯料、慢轉品、死庫存、turnover、dead stock、
 revenue、margin、trend、ranking、analysis、summary、profile
+客戶比較、品項比較、獨賣品項、專屬品項、交叉比較、compare-customers、
+A17、A05跟A17、A05和A17、哪些品項、沒有賣給
 
 ### 強制執行步驟（不可跳過、不可解釋、必須直接用 exec 工具執行）
 
@@ -116,7 +118,7 @@ python3 ~/.openclaw/skills/pue-order/scripts/data_query.py \
   [--customer X] [--period X] [--limit N] [--sort-by X] [--group-by X]
 ```
 
-**11 個 Action**：
+**12 個 Action**：
 | Action | 功�� | 必填參數 |
 |--------|------|----------|
 | `summary` | 彙總統計 | `--group-by customer\|supplier\|item\|category` |
@@ -130,6 +132,7 @@ python3 ~/.openclaw/skills/pue-order/scripts/data_query.py \
 | `forecast-variance` | 預測vs實際 | （可選 `--supplier X --item X --limit N`） |
 | `cost-trend` | 成本趨勢 | （���選 `--item X --category X --limit N`） |
 | `stock-analysis` | 庫存分析 | （可選 `--item X --category X --limit N`） |
+| `compare-customers` | **客戶品項交叉比較** | `--customers A05,A17`（可選 `--min-qty N --prefix-len N`） |
 
 **自然語言→CLI 對照**（few-shot，直接推導正確參數）：
 - "A05 去年買最多的品項" → `--action top-items --customer A05 --period 2025 --sort-by revenue`
@@ -154,8 +157,17 @@ python3 ~/.openclaw/skills/pue-order/scripts/data_query.py \
 - "庫存週轉率" ��� `--action stock-analysis`
 - "呆滯料有哪些" → `--action stock-analysis --limit 20`
 - "FI 類的庫存狀況" → `--action stock-analysis --category FI`
+- "A05 有賣但 A17 沒賣的品項" → `--action compare-customers --customers A05,A17`
+- "比較 A05 和 A17 的獨賣品項" → `--action compare-customers --customers A05,A17 --min-qty 5`
+- "A05 跟 A17 各自專屬的品項" → `--action compare-customers --customers A05,A17 --prefix-len 5`
 
 ⚠️ data_query.py 回傳 JSON，`results` 陣列必須全部整理成表格呈現。
+
+### ⚠️ 客戶比較必須用 compare-customers（強制）
+
+當用戶問「A 客戶有賣但 B 客戶沒有」、「兩個客戶的獨賣品項」、「比較兩個客戶」時，**必須使用 `--action compare-customers`**。
+❌ **絕對禁止**用 `summary` 或 `top-items` 分別查兩個客戶再自己比較 — 這樣會漏掉供應商變體合併、前綴聚合、集合差集，結果一定會錯。
+`compare-customers` 已內建正確的前綴聚合（前5碼）和嚴格集合差集邏輯。
 
 ### 🚫 絕對禁止
 - ❌ 不要解釋腳本的行為或限制 — 直接用 `exec` 執行它
