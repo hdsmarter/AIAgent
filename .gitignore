@@ -11,6 +11,16 @@ credentials/
 workspace/memory/*.md
 !workspace/memory/.gitkeep
 
+# Workspace agent-generated output (PPT, files, uploads)
+workspace/output/
+workspace/*.pptx
+workspace/*.xlsx
+workspace/*.docx
+workspace/*.pdf
+
+# Claude Code local state
+.claude/
+
 # Backups
 .backups/
 

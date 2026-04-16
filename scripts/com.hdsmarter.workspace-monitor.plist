@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hdsmarter.workspace-monitor</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tonyjiang/Documents/OpenClaw/scripts/workspace-disk-monitor.sh</string>
+    </array>
+
+    <!-- Run every 10 minutes (600 seconds) -->
+    <key>StartInterval</key>
+    <integer>600</integer>
+
+    <!-- Run on load to populate metrics immediately -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tonyjiang/.nemoclaw/workspace-monitor-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/tonyjiang/.nemoclaw/workspace-monitor-stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>WORKSPACE_DIR</key>
+        <string>/Users/tonyjiang/Documents/OpenClaw/workspace/output</string>
+    </dict>
+</dict>
+</plist>
