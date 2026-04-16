@@ -20,7 +20,18 @@ import path from 'node:path';
 
 const GATEWAY = process.env.GATEWAY_URL || 'http://127.0.0.1:18789';
 const PORT = parseInt(process.env.PORT || '18790', 10);
-const UPLOAD_DIR = '/tmp/dashboard-uploads';
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || path.resolve(import.meta.dirname, '../workspace');
+const OUTPUT_DIR = path.join(WORKSPACE_DIR, 'output');
+const UPLOAD_DIR = path.join(OUTPUT_DIR, 'uploads');
+
+// Allowed file extensions for download (whitelist)
+const ALLOWED_EXTENSIONS = new Set([
+  '.pptx', '.xlsx', '.docx', '.pdf', '.csv', '.txt', '.md', '.json',
+  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.zip',
+]);
+
+// Filename whitelist: alphanumeric, dots, hyphens, underscores
+const SAFE_FILENAME_RE = /^[a-zA-Z0-9._-]+$/;
 
 // Allowed origins for CORS (restrict to known Dashboard sources)
 const ALLOWED_ORIGINS = new Set([
@@ -87,6 +98,96 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: err.message }));
       }
     });
+    return;
+  }
+
+  // ── File download endpoint — serve files from workspace/output/ ──
+  if (req.method === 'GET' && req.url.startsWith('/files/')) {
+    const filename = decodeURIComponent(req.url.slice(7).split('?')[0]);
+
+    // Security: filename whitelist (no slashes, dots-only, etc.)
+    if (!filename || !SAFE_FILENAME_RE.test(filename)) {
+      res.writeHead(400, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid filename' }));
+      return;
+    }
+
+    // Security: extension whitelist
+    const ext = path.extname(filename).toLowerCase();
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      res.writeHead(403, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'File type not allowed' }));
+      return;
+    }
+
+    // Security: path traversal prevention
+    const filePath = path.resolve(OUTPUT_DIR, filename);
+    if (!filePath.startsWith(path.resolve(OUTPUT_DIR))) {
+      res.writeHead(403, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Path traversal blocked' }));
+      return;
+    }
+
+    // Check file exists
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { ...getCorsHeaders(req), 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'File not found' }));
+      return;
+    }
+
+    // Serve file with proper headers
+    const stat = fs.statSync(filePath);
+    const mimeTypes = {
+      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.pdf': 'application/pdf',
+      '.csv': 'text/csv',
+      '.txt': 'text/plain',
+      '.md': 'text/markdown',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.zip': 'application/zip',
+    };
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    res.writeHead(200, {
+      ...getCorsHeaders(req),
+      'Content-Type': contentType,
+      'Content-Length': stat.size,
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'private, no-cache',
+    });
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
+  // ── HEAD /files/:filename — check file existence (for ai-service detection) ──
+  if (req.method === 'HEAD' && req.url.startsWith('/files/')) {
+    const filename = decodeURIComponent(req.url.slice(7).split('?')[0]);
+    if (!filename || !SAFE_FILENAME_RE.test(filename)) {
+      res.writeHead(400, getCorsHeaders(req));
+      res.end();
+      return;
+    }
+    const filePath = path.resolve(OUTPUT_DIR, filename);
+    if (!filePath.startsWith(path.resolve(OUTPUT_DIR)) || !fs.existsSync(filePath)) {
+      res.writeHead(404, getCorsHeaders(req));
+      res.end();
+      return;
+    }
+    const stat = fs.statSync(filePath);
+    res.writeHead(200, {
+      ...getCorsHeaders(req),
+      'Content-Length': stat.size,
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.end();
     return;
   }
 
